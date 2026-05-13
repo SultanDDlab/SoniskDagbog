@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Lyden af din uge</title>
+
+  <style>
+    :root {
+      --bg: #f6f3ed;
+      --card: #ffffff;
+      --text: #1e1e1e;
+      --muted: #6d6d6d;
+      --border: #ddd6ca;
+      --accent: #1f4f46;
+      --danger: #8f2f2f;
+      --soft: #ece6dc;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 520px;
+      margin: 0 auto;
+      padding: 18px;
+      padding-bottom: 40px;
+    }
+
+    header {
+      padding-top: 12px;
+      margin-bottom: 18px;
+    }
+
+    h1 {
+      font-size: 2rem;
+      line-height: 1.05;
+      margin: 0 0 8px;
+      letter-spacing: -0.04em;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.98rem;
+      line-height: 1.45;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      padding: 18px;
+      margin-bottom: 16px;
+      box-shadow: 0 8px 22px rgba(0,0,0,0.04);
+    }
+
+    .status {
+      font-size: 0.95rem;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    .timer {
+      font-size: 3rem;
+      font-weight: 700;
+      letter-spacing: -0.06em;
+      margin: 10px 0;
+      text-align: center;
+    }
+
+    .progress-wrap {
+      width: 100%;
+      height: 10px;
+      background: var(--soft);
+      border-radius: 999px;
+      overflow: hidden;
+      margin: 14px 0 18px;
+    }
+
+    .progress {
+      height: 100%;
+      width: 0%;
+      background: var(--accent);
+      transition: width 0.15s linear;
+    }
+
+    .button-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    button {
+      width: 100%;
+      border: 0;
+      border-radius: 16px;
+      padding: 15px 16px;
+      font-size: 1rem;
+      font-weight: 650;
+      cursor: pointer;
+      min-height: 52px;
+    }
+
+    button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .primary {
+      background: var(--accent);
+      color: white;
+    }
+
+    .secondary {
+      background: var(--soft);
+      color: var(--text);
+    }
+
+    .danger {
+      background: #f3dddd;
+      color: var(--danger);
+    }
+
+    .days {
+      display: grid;
+      gap: 10px;
+    }
+
+    .day {
+      border: 1px solid var(--border);
+      background: #fff;
+      border-radius: 18px;
+      padding: 14px;
+    }
+
+    .day-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .day-title {
+      font-weight: 750;
+    }
+
+    .day-state {
+      font-size: 0.82rem;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .day-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .small-btn {
+      min-height: 42px;
+      padding: 10px;
+      font-size: 0.9rem;
+      border-radius: 13px;
+    }
+
+    .note {
+      width: 100%;
+      margin-top: 10px;
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      padding: 10px;
+      font: inherit;
+      resize: vertical;
+      min-height: 44px;
+      background: #fffdf9;
+    }
+
+    .info {
+      font-size: 0.9rem;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    audio {
+      width: 100%;
+      margin-top: 10px;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    @media (min-width: 480px) {
+      .button-row {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      h1 {
+        font-size: 2.3rem;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="app">
+    <header>
+      <h1>Lyden af din uge</h1>
+      <p class="subtitle">
+        Optag én kort lyd om dagen. Efter syv dage kan dine lyde afspilles som en samlet sonisk dagbog.
+      </p>
+    </header>
+
+    <section class="card">
+      <div class="status" id="statusText">Vælg en dag og optag op til 30 sekunder.</div>
+
+      <label for="daySelect">Vælg dag</label>
+      <select id="daySelect" style="width:100%; margin-top:8px; padding:14px; border-radius:14px; border:1px solid var(--border); font:inherit;">
+        <option value="1">Dag 1</option>
+        <option value="2">Dag 2</option>
+        <option value="3">Dag 3</option>
+        <option value="4">Dag 4</option>
+        <option value="5">Dag 5</option>
+        <option value="6">Dag 6</option>
+        <option value="7">Dag 7</option>
+      </select>
+
+      <div class="timer" id="timer">00:00</div>
+
+      <div class="progress-wrap">
+        <div class="progress" id="progress"></div>
+      </div>
+
+      <div class="button-row">
+        <button id="recordBtn" class="primary">Start optagelse</button>
+        <button id="stopBtn" class="secondary" disabled>Stop</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2 style="margin-top:0;">Ugens lyde</h2>
+      <div class="days" id="daysContainer"></div>
+    </section>
+
+    <section class="card">
+      <h2 style="margin-top:0;">Ugekomposition</h2>
+      <p class="info">
+        Denne prototype afspiller dine syv optagelser i rækkefølge. Det demonstrerer en simpel form for automatisk kuratering.
+      </p>
+      <button id="playWeekBtn" class="primary">Afspil ugekomposition</button>
+      <button id="stopWeekBtn" class="secondary" style="margin-top:10px;" disabled>Stop ugekomposition</button>
+    </section>
+
+    <section class="card">
+      <h2 style="margin-top:0;">Om lagring</h2>
+      <p class="info">
+        Lydene gemmes kun lokalt i denne browser. De uploades ikke til en server. Hvis browserdata slettes, kan optagelserne forsvinde.
+      </p>
+      <button id="clearAllBtn" class="danger">Slet alle optagelser</button>
+    </section>
+  </main>
+
+  <script>
+    const MAX_SECONDS = 30;
+    const DB_NAME = "lyden-af-din-uge";
+    const STORE_NAME = "recordings";
+
+    let db;
+    let mediaRecorder;
+    let chunks = [];
+    let recordingTimer;
+    let recordingSeconds = 0;
+    let currentAudio = null;
+    let weekPlaying = false;
+
+    const recordBtn = document.getElementById("recordBtn");
+    const stopBtn = document.getElementById("stopBtn");
+    const timer = document.getElementById("timer");
+    const progress = document.getElementById("progress");
+    const statusText = document.getElementById("statusText");
+    const daySelect = document.getElementById("daySelect");
+    const daysContainer = document.getElementById("daysContainer");
+    const playWeekBtn = document.getElementById("playWeekBtn");
+    const stopWeekBtn = document.getElementById("stopWeekBtn");
+    const clearAllBtn = document.getElementById("clearAllBtn");
+
+    function openDB() {
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, 1);
+
+        request.onupgradeneeded = function(event) {
+          const database = event.target.result;
+          if (!database.objectStoreNames.contains(STORE_NAME)) {
+            database.createObjectStore(STORE_NAME, { keyPath: "day" });
+          }
+        };
+
+        request.onsuccess = function(event) {
+          resolve(event.target.result);
+        };
+
+        request.onerror = function() {
+          reject(request.error);
+        };
+      });
+    }
+
+    function saveRecording(day, blob, note = "") {
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, "readwrite");
+        const store = tx.objectStore(STORE_NAME);
+
+        const item = {
+          day: Number(day),
+          blob,
+          note,
+          createdAt: new Date().toISOString()
+        };
+
+        store.put(item);
+
+        tx.oncomplete = resolve;
+        tx.onerror = () => reject(tx.error);
+      });
+    }
+
+    function getRecording(day) {
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, "readonly");
+        const store = tx.objectStore(STORE_NAME);
+        const request = store.get(Number(day));
+
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+    }
+
+    function getAllRecordings() {
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, "readonly");
+        const store = tx.objectStore(STORE_NAME);
+        const request = store.getAll();
+
+        request.onsuccess = () => {
+          const result = request.result.sort((a, b) => a.day - b.day);
+          resolve(result);
+        };
+
+        request.onerror = () => reject(request.error);
+      });
+    }
+
+    function deleteRecording(day) {
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, "readwrite");
+        const store = tx.objectStore(STORE_NAME);
+        store.delete(Number(day));
+
+        tx.oncomplete = resolve;
+        tx.onerror = () => reject(tx.error);
+      });
+    }
+
+    function clearAllRecordings() {
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, "readwrite");
+        const store = tx.objectStore(STORE_NAME);
+        store.clear();
+
+        tx.oncomplete = resolve;
+        tx.onerror = () => reject(tx.error);
+      });
+    }
+
+    function formatTime(seconds) {
+      const m = String(Math.floor(seconds / 60)).padStart(2, "0");
+      const s = String(seconds % 60).padStart(2, "0");
+      return `${m}:${s}`;
+    }
+
+    function resetRecorderUI() {
+      recordingSeconds = 0;
+      timer.textContent = "00:00";
+      progress.style.width = "0%";
+      recordBtn.disabled = false;
+      stopBtn.disabled = true;
+    }
+
+    async function startRecording() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+        chunks = [];
+        mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
+
+        mediaRecorder.ondataavailable = event => {
+          if (event.data.size > 0) {
+            chunks.push(event.data);
+          }
+        };
+
+        mediaRecorder.onstop = async () => {
+          const blob = new Blob(chunks, { type: "audio/webm" });
+          const day = daySelect.value;
+
+          const existing = await getRecording(day);
+          const note = existing?.note || "";
+
+          await saveRecording(day, blob, note);
+          stream.getTracks().forEach(track => track.stop());
+
+          statusText.textContent = `Dag ${day} er gemt.`;
+          resetRecorderUI();
+          await renderDays();
+        };
+
+        mediaRecorder.start();
+        recordBtn.disabled = true;
+        stopBtn.disabled = false;
+        statusText.textContent = "Optager...";
+
+        recordingTimer = setInterval(() => {
+          recordingSeconds++;
+          timer.textContent = formatTime(recordingSeconds);
+          progress.style.width = `${(recordingSeconds / MAX_SECONDS) * 100}%`;
+
+          if (recordingSeconds >= MAX_SECONDS) {
+            stopRecording();
+          }
+        }, 1000);
+
+      } catch (error) {
+        statusText.textContent = "Mikrofonadgang blev afvist eller er ikke understøttet.";
+        console.error(error);
+      }
+    }
+
+    function stopRecording() {
+      clearInterval(recordingTimer);
+
+      if (mediaRecorder && mediaRecorder.state !== "inactive") {
+        mediaRecorder.stop();
+      }
+    }
+
+    async function updateNote(day, note) {
+      const existing = await getRecording(day);
+      if (!existing) return;
+
+      await saveRecording(day, existing.blob, note);
+      await renderDays();
+    }
+
+    async function renderDays() {
+      daysContainer.innerHTML = "";
+
+      for (let day = 1; day <= 7; day++) {
+        const recording = await getRecording(day);
+        const hasRecording = Boolean(recording);
+
+        const dayEl = document.createElement("div");
+        dayEl.className = "day";
+
+        const top = document.createElement("div");
+        top.className = "day-top";
+
+        const title = document.createElement("div");
+        title.className = "day-title";
+        title.textContent = `Dag ${day}`;
+
+        const state = document.createElement("div");
+        state.className = "day-state";
+        state.textContent = hasRecording ? "Optaget" : "Tom";
+
+        top.appendChild(title);
+        top.appendChild(state);
+        dayEl.appendChild(top);
+
+        if (hasRecording) {
+          const audio = document.createElement("audio");
+          audio.controls = true;
+          audio.src = URL.createObjectURL(recording.blob);
+          dayEl.appendChild(audio);
+
+          const note = document.createElement("textarea");
+          note.className = "note";
+          note.placeholder = "Kort note om dagens lyd...";
+          note.value = recording.note || "";
+          note.addEventListener("change", () => updateNote(day, note.value));
+          dayEl.appendChild(note);
+
+          const actions = document.createElement("div");
+          actions.className = "day-actions";
+          actions.style.marginTop = "10px";
+
+          const replaceBtn = document.createElement("button");
+          replaceBtn.className = "small-btn secondary";
+          replaceBtn.textContent = "Optag igen";
+          replaceBtn.onclick = () => {
+            daySelect.value = String(day);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          };
+
+          const deleteBtn = document.createElement("button");
+          deleteBtn.className = "small-btn danger";
+          deleteBtn.textContent = "Slet";
+          deleteBtn.onclick = async () => {
+            await deleteRecording(day);
+            await renderDays();
+          };
+
+          actions.appendChild(replaceBtn);
+          actions.appendChild(deleteBtn);
+          dayEl.appendChild(actions);
+        } else {
+          const button = document.createElement("button");
+          button.className = "small-btn secondary";
+          button.textContent = "Vælg denne dag";
+          button.onclick = () => {
+            daySelect.value = String(day);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          };
+          dayEl.appendChild(button);
+        }
+
+        daysContainer.appendChild(dayEl);
+      }
+    }
+
+    async function playWeekComposition() {
+      const recordings = await getAllRecordings();
+
+      if (recordings.length === 0) {
+        statusText.textContent = "Der er ingen optagelser endnu.";
+        return;
+      }
+
+      weekPlaying = true;
+      playWeekBtn.disabled = true;
+      stopWeekBtn.disabled = false;
+
+      for (const recording of recordings) {
+        if (!weekPlaying) break;
+
+        await new Promise(resolve => {
+          currentAudio = new Audio(URL.createObjectURL(recording.blob));
+          currentAudio.onended = resolve;
+          currentAudio.onerror = resolve;
+          currentAudio.play();
+        });
+
+        await new Promise(resolve => setTimeout(resolve, 700));
+      }
+
+      weekPlaying = false;
+      currentAudio = null;
+      playWeekBtn.disabled = false;
+      stopWeekBtn.disabled = true;
+    }
+
+    function stopWeekComposition() {
+      weekPlaying = false;
+
+      if (currentAudio) {
+        currentAudio.pause();
+        currentAudio.currentTime = 0;
+      }
+
+      playWeekBtn.disabled = false;
+      stopWeekBtn.disabled = true;
+    }
+
+    recordBtn.addEventListener("click", startRecording);
+    stopBtn.addEventListener("click", stopRecording);
+    playWeekBtn.addEventListener("click", playWeekComposition);
+    stopWeekBtn.addEventListener("click", stopWeekComposition);
+
+    clearAllBtn.addEventListener("click", async () => {
+      const confirmed = confirm("Vil du slette alle syv optagelser?");
+      if (!confirmed) return;
+
+      await clearAllRecordings();
+      stopWeekComposition();
+      await renderDays();
+      statusText.textContent = "Alle optagelser er slettet.";
+    });
+
+    async function init() {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        statusText.textContent = "Denne browser understøtter ikke optagelse.";
+        recordBtn.disabled = true;
+        return;
+      }
+
+      db = await openDB();
+
+      if (navigator.storage && navigator.storage.persist) {
+        try {
+          await navigator.storage.persist();
+        } catch (error) {
+          console.warn("Persistent storage not granted.");
+        }
+      }
+
+      await renderDays();
+    }
+
+    init();
+  </script>
+</body>
+</html>
