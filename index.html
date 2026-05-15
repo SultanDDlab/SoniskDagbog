@@ -15,6 +15,7 @@
       --accent: #1f4f46;
       --danger: #8f2f2f;
       --soft: #ece6dc;
+      --shadow: rgba(0,0,0,0.05);
     }
 
     * {
@@ -31,22 +32,35 @@
 
     .app {
       width: 100%;
-      max-width: 520px;
+      max-width: 540px;
       margin: 0 auto;
       padding: 18px;
-      padding-bottom: 40px;
+      padding-bottom: 42px;
     }
 
     header {
-      padding-top: 12px;
+      padding-top: 14px;
       margin-bottom: 18px;
     }
 
     h1 {
-      font-size: 2rem;
+      font-size: 2.05rem;
       line-height: 1.05;
       margin: 0 0 8px;
       letter-spacing: -0.04em;
+    }
+
+    h2 {
+      margin-top: 0;
+      font-size: 1.25rem;
+      letter-spacing: -0.02em;
+    }
+
+    label {
+      display: block;
+      font-size: 0.92rem;
+      font-weight: 700;
+      margin-bottom: 8px;
     }
 
     .subtitle {
@@ -59,23 +73,50 @@
     .card {
       background: var(--card);
       border: 1px solid var(--border);
-      border-radius: 22px;
+      border-radius: 24px;
       padding: 18px;
       margin-bottom: 16px;
-      box-shadow: 0 8px 22px rgba(0,0,0,0.04);
+      box-shadow: 0 8px 22px var(--shadow);
     }
 
     .status {
       font-size: 0.95rem;
       color: var(--muted);
-      margin-bottom: 12px;
+      margin-bottom: 14px;
+      line-height: 1.4;
+    }
+
+    select,
+    textarea,
+    input[type="range"] {
+      width: 100%;
+      font: inherit;
+    }
+
+    select {
+      padding: 14px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: #fffdf9;
+      color: var(--text);
+      margin-bottom: 14px;
+    }
+
+    textarea {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px;
+      resize: vertical;
+      min-height: 58px;
+      background: #fffdf9;
+      color: var(--text);
     }
 
     .timer {
       font-size: 3rem;
-      font-weight: 700;
+      font-weight: 780;
       letter-spacing: -0.06em;
-      margin: 10px 0;
+      margin: 8px 0;
       text-align: center;
     }
 
@@ -107,9 +148,10 @@
       border-radius: 16px;
       padding: 15px 16px;
       font-size: 1rem;
-      font-weight: 650;
+      font-weight: 700;
       cursor: pointer;
       min-height: 52px;
+      touch-action: manipulation;
     }
 
     button:disabled {
@@ -132,6 +174,57 @@
       color: var(--danger);
     }
 
+    .small-btn {
+      min-height: 42px;
+      padding: 10px;
+      font-size: 0.9rem;
+      border-radius: 13px;
+    }
+
+    .emoji-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .emoji-option {
+      border: 1px solid var(--border);
+      background: #fffdf9;
+      border-radius: 16px;
+      min-height: 58px;
+      font-size: 1.45rem;
+      padding: 8px;
+    }
+
+    .emoji-option.active {
+      border: 2px solid var(--accent);
+      background: var(--soft);
+    }
+
+    .bpm-box {
+      margin-bottom: 16px;
+    }
+
+    .bpm-value {
+      text-align: center;
+      font-size: 1.4rem;
+      font-weight: 800;
+      margin: 4px 0 6px;
+    }
+
+    .bpm-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    input[type="range"] {
+      accent-color: var(--accent);
+    }
+
     .days {
       display: grid;
       gap: 10px;
@@ -140,20 +233,20 @@
     .day {
       border: 1px solid var(--border);
       background: #fff;
-      border-radius: 18px;
+      border-radius: 20px;
       padding: 14px;
     }
 
     .day-top {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: space-between;
       gap: 10px;
       margin-bottom: 10px;
     }
 
     .day-title {
-      font-weight: 750;
+      font-weight: 800;
     }
 
     .day-state {
@@ -162,29 +255,29 @@
       white-space: nowrap;
     }
 
+    .meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 10px 0;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 999px;
+      background: var(--soft);
+      padding: 7px 10px;
+      font-size: 0.88rem;
+      color: var(--text);
+    }
+
     .day-actions {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 8px;
-    }
-
-    .small-btn {
-      min-height: 42px;
-      padding: 10px;
-      font-size: 0.9rem;
-      border-radius: 13px;
-    }
-
-    .note {
-      width: 100%;
       margin-top: 10px;
-      border: 1px solid var(--border);
-      border-radius: 13px;
-      padding: 10px;
-      font: inherit;
-      resize: vertical;
-      min-height: 44px;
-      background: #fffdf9;
     }
 
     .info {
@@ -195,7 +288,13 @@
 
     audio {
       width: 100%;
-      margin-top: 10px;
+      margin-top: 8px;
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 16px 0;
     }
 
     .hidden {
@@ -208,7 +307,7 @@
       }
 
       h1 {
-        font-size: 2.3rem;
+        font-size: 2.35rem;
       }
     }
   </style>
@@ -219,15 +318,16 @@
     <header>
       <h1>Lyden af din uge</h1>
       <p class="subtitle">
-        Optag én kort lyd om dagen. Efter syv dage kan dine lyde afspilles som en samlet sonisk dagbog.
+        Optag én kort lyd om dagen. Giv dagen en karakter med emoji, tempo og note. Efter syv dage samles lydene til en sonisk dagbog.
       </p>
     </header>
 
     <section class="card">
+      <h2>Dagens optagelse</h2>
       <div class="status" id="statusText">Vælg en dag og optag op til 30 sekunder.</div>
 
       <label for="daySelect">Vælg dag</label>
-      <select id="daySelect" style="width:100%; margin-top:8px; padding:14px; border-radius:14px; border:1px solid var(--border); font:inherit;">
+      <select id="daySelect">
         <option value="1">Dag 1</option>
         <option value="2">Dag 2</option>
         <option value="3">Dag 3</option>
@@ -250,21 +350,55 @@
     </section>
 
     <section class="card">
-      <h2 style="margin-top:0;">Ugens lyde</h2>
+      <h2>Dagens karakter</h2>
+
+      <label>Hvordan føltes dagen?</label>
+      <div class="emoji-grid" id="emojiGrid">
+        <button class="emoji-option" data-emoji="😌" data-label="Rolig" title="Rolig">😌</button>
+        <button class="emoji-option" data-emoji="🙂" data-label="Almindelig" title="Almindelig">🙂</button>
+        <button class="emoji-option" data-emoji="⚡" data-label="Intens" title="Intens">⚡</button>
+        <button class="emoji-option" data-emoji="🌧️" data-label="Tung" title="Tung">🌧️</button>
+        <button class="emoji-option" data-emoji="🌀" data-label="Kaotisk" title="Kaotisk">🌀</button>
+      </div>
+
+      <div class="bpm-box">
+        <label for="bpmSlider">Dagens tempo</label>
+        <div class="bpm-value"><span id="bpmValue">90</span> BPM</div>
+        <input id="bpmSlider" type="range" min="40" max="180" step="1" value="90" />
+        <div class="bpm-labels">
+          <span>Langsom</span>
+          <span>Travl</span>
+        </div>
+      </div>
+
+      <label for="dayNote">Kort note</label>
+      <textarea id="dayNote" placeholder="Hvad gjorde denne lyd til dagens lyd?"></textarea>
+
+      <button id="saveCharacterBtn" class="secondary" style="margin-top:12px;">
+        Gem dagens karakter
+      </button>
+
+      <p class="info">
+        Emoji og BPM fungerer som et ekstra tegnlag oven på lydoptagelsen. BPM bruges også til at styre pausen mellem lydene i ugekompositionen.
+      </p>
+    </section>
+
+    <section class="card">
+      <h2>Ugens lyde</h2>
       <div class="days" id="daysContainer"></div>
     </section>
 
     <section class="card">
-      <h2 style="margin-top:0;">Ugekomposition</h2>
+      <h2>Ugekomposition</h2>
       <p class="info">
-        Denne prototype afspiller dine syv optagelser i rækkefølge. Det demonstrerer en simpel form for automatisk kuratering.
+        Lydene afspilles i rækkefølge. Høj BPM giver kortere pause mellem lydene, lav BPM giver længere pause.
       </p>
       <button id="playWeekBtn" class="primary">Afspil ugekomposition</button>
       <button id="stopWeekBtn" class="secondary" style="margin-top:10px;" disabled>Stop ugekomposition</button>
     </section>
 
     <section class="card">
-      <h2 style="margin-top:0;">Om lagring</h2>
+      <h2>Om lagring</h2>
       <p class="info">
         Lydene gemmes kun lokalt i denne browser. De uploades ikke til en server. Hvis browserdata slettes, kan optagelserne forsvinde.
       </p>
@@ -274,7 +408,7 @@
 
   <script>
     const MAX_SECONDS = 30;
-    const DB_NAME = "lyden-af-din-uge";
+    const DB_NAME = "lyden-af-din-uge-v2";
     const STORE_NAME = "recordings";
 
     let db;
@@ -284,6 +418,8 @@
     let recordingSeconds = 0;
     let currentAudio = null;
     let weekPlaying = false;
+    let selectedEmoji = "🙂";
+    let selectedEmojiLabel = "Almindelig";
 
     const recordBtn = document.getElementById("recordBtn");
     const stopBtn = document.getElementById("stopBtn");
@@ -295,6 +431,11 @@
     const playWeekBtn = document.getElementById("playWeekBtn");
     const stopWeekBtn = document.getElementById("stopWeekBtn");
     const clearAllBtn = document.getElementById("clearAllBtn");
+    const emojiGrid = document.getElementById("emojiGrid");
+    const bpmSlider = document.getElementById("bpmSlider");
+    const bpmValue = document.getElementById("bpmValue");
+    const dayNote = document.getElementById("dayNote");
+    const saveCharacterBtn = document.getElementById("saveCharacterBtn");
 
     function openDB() {
       return new Promise((resolve, reject) => {
@@ -302,6 +443,7 @@
 
         request.onupgradeneeded = function(event) {
           const database = event.target.result;
+
           if (!database.objectStoreNames.contains(STORE_NAME)) {
             database.createObjectStore(STORE_NAME, { keyPath: "day" });
           }
@@ -317,18 +459,25 @@
       });
     }
 
-    function saveRecording(day, blob, note = "") {
+    function makeDefaultItem(day) {
+      return {
+        day: Number(day),
+        blob: null,
+        emoji: "🙂",
+        emojiLabel: "Almindelig",
+        bpm: 90,
+        note: "",
+        createdAt: null,
+        updatedAt: new Date().toISOString()
+      };
+    }
+
+    function saveItem(item) {
       return new Promise((resolve, reject) => {
         const tx = db.transaction(STORE_NAME, "readwrite");
         const store = tx.objectStore(STORE_NAME);
 
-        const item = {
-          day: Number(day),
-          blob,
-          note,
-          createdAt: new Date().toISOString()
-        };
-
+        item.updatedAt = new Date().toISOString();
         store.put(item);
 
         tx.oncomplete = resolve;
@@ -336,18 +485,18 @@
       });
     }
 
-    function getRecording(day) {
+    function getItem(day) {
       return new Promise((resolve, reject) => {
         const tx = db.transaction(STORE_NAME, "readonly");
         const store = tx.objectStore(STORE_NAME);
         const request = store.get(Number(day));
 
-        request.onsuccess = () => resolve(request.result);
+        request.onsuccess = () => resolve(request.result || null);
         request.onerror = () => reject(request.error);
       });
     }
 
-    function getAllRecordings() {
+    function getAllItems() {
       return new Promise((resolve, reject) => {
         const tx = db.transaction(STORE_NAME, "readonly");
         const store = tx.objectStore(STORE_NAME);
@@ -362,7 +511,7 @@
       });
     }
 
-    function deleteRecording(day) {
+    function deleteItem(day) {
       return new Promise((resolve, reject) => {
         const tx = db.transaction(STORE_NAME, "readwrite");
         const store = tx.objectStore(STORE_NAME);
@@ -373,7 +522,7 @@
       });
     }
 
-    function clearAllRecordings() {
+    function clearAllItems() {
       return new Promise((resolve, reject) => {
         const tx = db.transaction(STORE_NAME, "readwrite");
         const store = tx.objectStore(STORE_NAME);
@@ -398,6 +547,56 @@
       stopBtn.disabled = true;
     }
 
+    function updateEmojiUI() {
+      const buttons = document.querySelectorAll(".emoji-option");
+
+      buttons.forEach(button => {
+        const isActive = button.dataset.emoji === selectedEmoji;
+        button.classList.toggle("active", isActive);
+      });
+    }
+
+    function getPauseFromBpm(bpm) {
+      const minPause = 300;
+      const maxPause = 2200;
+      const minBpm = 40;
+      const maxBpm = 180;
+
+      const normalized = (bpm - minBpm) / (maxBpm - minBpm);
+      const pause = maxPause - normalized * (maxPause - minPause);
+
+      return Math.round(pause);
+    }
+
+    async function loadSelectedDayCharacter() {
+      const day = Number(daySelect.value);
+      const item = await getItem(day);
+
+      selectedEmoji = item?.emoji || "🙂";
+      selectedEmojiLabel = item?.emojiLabel || "Almindelig";
+      bpmSlider.value = item?.bpm || 90;
+      bpmValue.textContent = bpmSlider.value;
+      dayNote.value = item?.note || "";
+
+      updateEmojiUI();
+    }
+
+    async function saveSelectedDayCharacter() {
+      const day = Number(daySelect.value);
+      const existing = await getItem(day);
+      const item = existing || makeDefaultItem(day);
+
+      item.emoji = selectedEmoji;
+      item.emojiLabel = selectedEmojiLabel;
+      item.bpm = Number(bpmSlider.value);
+      item.note = dayNote.value;
+
+      await saveItem(item);
+      await renderDays();
+
+      statusText.textContent = `Dag ${day} karakter er gemt.`;
+    }
+
     async function startRecording() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -413,12 +612,20 @@
 
         mediaRecorder.onstop = async () => {
           const blob = new Blob(chunks, { type: "audio/webm" });
-          const day = daySelect.value;
+          const day = Number(daySelect.value);
 
-          const existing = await getRecording(day);
-          const note = existing?.note || "";
+          const existing = await getItem(day);
+          const item = existing || makeDefaultItem(day);
 
-          await saveRecording(day, blob, note);
+          item.blob = blob;
+          item.createdAt = item.createdAt || new Date().toISOString();
+          item.emoji = selectedEmoji;
+          item.emojiLabel = selectedEmojiLabel;
+          item.bpm = Number(bpmSlider.value);
+          item.note = dayNote.value;
+
+          await saveItem(item);
+
           stream.getTracks().forEach(track => track.stop());
 
           statusText.textContent = `Dag ${day} er gemt.`;
@@ -455,20 +662,13 @@
       }
     }
 
-    async function updateNote(day, note) {
-      const existing = await getRecording(day);
-      if (!existing) return;
-
-      await saveRecording(day, existing.blob, note);
-      await renderDays();
-    }
-
     async function renderDays() {
       daysContainer.innerHTML = "";
 
       for (let day = 1; day <= 7; day++) {
-        const recording = await getRecording(day);
-        const hasRecording = Boolean(recording);
+        const item = await getItem(day);
+        const hasRecording = Boolean(item?.blob);
+        const hasCharacter = Boolean(item);
 
         const dayEl = document.createElement("div");
         dayEl.className = "day";
@@ -482,65 +682,79 @@
 
         const state = document.createElement("div");
         state.className = "day-state";
-        state.textContent = hasRecording ? "Optaget" : "Tom";
+        state.textContent = hasRecording ? "Optaget" : hasCharacter ? "Karakter gemt" : "Tom";
 
         top.appendChild(title);
         top.appendChild(state);
         dayEl.appendChild(top);
 
+        if (hasCharacter) {
+          const meta = document.createElement("div");
+          meta.className = "meta-row";
+
+          const emojiPill = document.createElement("span");
+          emojiPill.className = "pill";
+          emojiPill.textContent = `${item.emoji || "🙂"} ${item.emojiLabel || "Almindelig"}`;
+
+          const bpmPill = document.createElement("span");
+          bpmPill.className = "pill";
+          bpmPill.textContent = `${item.bpm || 90} BPM`;
+
+          meta.appendChild(emojiPill);
+          meta.appendChild(bpmPill);
+          dayEl.appendChild(meta);
+        }
+
         if (hasRecording) {
           const audio = document.createElement("audio");
           audio.controls = true;
-          audio.src = URL.createObjectURL(recording.blob);
+          audio.src = URL.createObjectURL(item.blob);
           dayEl.appendChild(audio);
-
-          const note = document.createElement("textarea");
-          note.className = "note";
-          note.placeholder = "Kort note om dagens lyd...";
-          note.value = recording.note || "";
-          note.addEventListener("change", () => updateNote(day, note.value));
-          dayEl.appendChild(note);
-
-          const actions = document.createElement("div");
-          actions.className = "day-actions";
-          actions.style.marginTop = "10px";
-
-          const replaceBtn = document.createElement("button");
-          replaceBtn.className = "small-btn secondary";
-          replaceBtn.textContent = "Optag igen";
-          replaceBtn.onclick = () => {
-            daySelect.value = String(day);
-            window.scrollTo({ top: 0, behavior: "smooth" });
-          };
-
-          const deleteBtn = document.createElement("button");
-          deleteBtn.className = "small-btn danger";
-          deleteBtn.textContent = "Slet";
-          deleteBtn.onclick = async () => {
-            await deleteRecording(day);
-            await renderDays();
-          };
-
-          actions.appendChild(replaceBtn);
-          actions.appendChild(deleteBtn);
-          dayEl.appendChild(actions);
-        } else {
-          const button = document.createElement("button");
-          button.className = "small-btn secondary";
-          button.textContent = "Vælg denne dag";
-          button.onclick = () => {
-            daySelect.value = String(day);
-            window.scrollTo({ top: 0, behavior: "smooth" });
-          };
-          dayEl.appendChild(button);
         }
+
+        if (item?.note) {
+          const note = document.createElement("p");
+          note.className = "info";
+          note.textContent = item.note;
+          dayEl.appendChild(note);
+        }
+
+        const actions = document.createElement("div");
+        actions.className = "day-actions";
+
+        const editBtn = document.createElement("button");
+        editBtn.className = "small-btn secondary";
+        editBtn.textContent = hasRecording ? "Redigér" : "Vælg dag";
+        editBtn.onclick = async () => {
+          daySelect.value = String(day);
+          await loadSelectedDayCharacter();
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        };
+
+        const deleteBtn = document.createElement("button");
+        deleteBtn.className = "small-btn danger";
+        deleteBtn.textContent = "Slet";
+        deleteBtn.disabled = !hasCharacter;
+        deleteBtn.onclick = async () => {
+          await deleteItem(day);
+          await renderDays();
+
+          if (Number(daySelect.value) === day) {
+            await loadSelectedDayCharacter();
+          }
+        };
+
+        actions.appendChild(editBtn);
+        actions.appendChild(deleteBtn);
+        dayEl.appendChild(actions);
 
         daysContainer.appendChild(dayEl);
       }
     }
 
     async function playWeekComposition() {
-      const recordings = await getAllRecordings();
+      const items = await getAllItems();
+      const recordings = items.filter(item => item.blob);
 
       if (recordings.length === 0) {
         statusText.textContent = "Der er ingen optagelser endnu.";
@@ -551,23 +765,28 @@
       playWeekBtn.disabled = true;
       stopWeekBtn.disabled = false;
 
-      for (const recording of recordings) {
+      for (const item of recordings) {
         if (!weekPlaying) break;
 
+        statusText.textContent = `Afspiller dag ${item.day}: ${item.emoji || "🙂"} ${item.bpm || 90} BPM`;
+
         await new Promise(resolve => {
-          currentAudio = new Audio(URL.createObjectURL(recording.blob));
+          currentAudio = new Audio(URL.createObjectURL(item.blob));
           currentAudio.onended = resolve;
           currentAudio.onerror = resolve;
           currentAudio.play();
         });
 
-        await new Promise(resolve => setTimeout(resolve, 700));
+        const pauseMs = getPauseFromBpm(Number(item.bpm || 90));
+
+        await new Promise(resolve => setTimeout(resolve, pauseMs));
       }
 
       weekPlaying = false;
       currentAudio = null;
       playWeekBtn.disabled = false;
       stopWeekBtn.disabled = true;
+      statusText.textContent = "Ugekompositionen er færdig.";
     }
 
     function stopWeekComposition() {
@@ -580,21 +799,41 @@
 
       playWeekBtn.disabled = false;
       stopWeekBtn.disabled = true;
+      statusText.textContent = "Ugekompositionen er stoppet.";
     }
 
     recordBtn.addEventListener("click", startRecording);
     stopBtn.addEventListener("click", stopRecording);
     playWeekBtn.addEventListener("click", playWeekComposition);
     stopWeekBtn.addEventListener("click", stopWeekComposition);
+    saveCharacterBtn.addEventListener("click", saveSelectedDayCharacter);
+
+    daySelect.addEventListener("change", loadSelectedDayCharacter);
+
+    bpmSlider.addEventListener("input", () => {
+      bpmValue.textContent = bpmSlider.value;
+    });
+
+    emojiGrid.addEventListener("click", event => {
+      const button = event.target.closest(".emoji-option");
+      if (!button) return;
+
+      selectedEmoji = button.dataset.emoji;
+      selectedEmojiLabel = button.dataset.label;
+
+      updateEmojiUI();
+    });
 
     clearAllBtn.addEventListener("click", async () => {
-      const confirmed = confirm("Vil du slette alle syv optagelser?");
+      const confirmed = confirm("Vil du slette alle syv dage?");
       if (!confirmed) return;
 
-      await clearAllRecordings();
+      await clearAllItems();
       stopWeekComposition();
       await renderDays();
-      statusText.textContent = "Alle optagelser er slettet.";
+      await loadSelectedDayCharacter();
+
+      statusText.textContent = "Alle dage er slettet.";
     });
 
     async function init() {
@@ -614,6 +853,8 @@
         }
       }
 
+      updateEmojiUI();
+      await loadSelectedDayCharacter();
       await renderDays();
     }
 
