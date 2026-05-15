@@ -324,7 +324,7 @@
 
     <section class="card">
       <h2>Dagens optagelse</h2>
-      <div class="status" id="statusText">Vælg en dag og optag op til 30 sekunder.</div>
+      <div class="status" id="statusText">Vælg en dag og optag op til 20 sekunder.</div>
 
       <label for="daySelect">Vælg dag</label>
       <select id="daySelect">
@@ -356,6 +356,7 @@
       <div class="emoji-grid" id="emojiGrid">
         <button class="emoji-option" data-emoji="😌" data-label="Rolig" title="Rolig">😌</button>
         <button class="emoji-option" data-emoji="🙂" data-label="Almindelig" title="Almindelig">🙂</button>
+         <button class="emoji-option" data-emoji="🤩" data-label="Udmærket" title="Udmærket">🤩</button>
         <button class="emoji-option" data-emoji="⚡" data-label="Intens" title="Intens">⚡</button>
         <button class="emoji-option" data-emoji="🌧️" data-label="Tung" title="Tung">🌧️</button>
         <button class="emoji-option" data-emoji="🌀" data-label="Kaotisk" title="Kaotisk">🌀</button>
@@ -407,7 +408,7 @@
   </main>
 
   <script>
-    const MAX_SECONDS = 30;
+    const MAX_SECONDS = 20;
     const DB_NAME = "lyden-af-din-uge-v2";
     const STORE_NAME = "recordings";
 
