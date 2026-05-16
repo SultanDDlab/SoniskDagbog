@@ -184,17 +184,17 @@
     .emoji-grid {
       display: grid;
       grid-template-columns: repeat(6, 1fr);
-      gap: 8px;
+      gap: 6px;
       margin-bottom: 16px;
     }
 
     .emoji-option {
       border: 1px solid var(--border);
       background: #fffdf9;
-      border-radius: 16px;
-      min-height: 58px;
-      font-size: 1.45rem;
-      padding: 8px;
+      border-radius: 14px;
+      min-height: 50px;
+      font-size: 1.25rem;
+      padding: 6px;
     }
 
     .emoji-option.active {
@@ -291,16 +291,6 @@
       margin-top: 8px;
     }
 
-    .divider {
-      height: 1px;
-      background: var(--border);
-      margin: 16px 0;
-    }
-
-    .hidden {
-      display: none;
-    }
-
     @media (min-width: 480px) {
       .button-row {
         grid-template-columns: 1fr 1fr;
@@ -356,7 +346,7 @@
       <div class="emoji-grid" id="emojiGrid">
         <button class="emoji-option" data-emoji="😌" data-label="Rolig" title="Rolig">😌</button>
         <button class="emoji-option" data-emoji="🙂" data-label="Almindelig" title="Almindelig">🙂</button>
-         <button class="emoji-option" data-emoji="🤩" data-label="Udmærket" title="Udmærket">🤩</button>
+        <button class="emoji-option" data-emoji="🤩" data-label="Udmærket" title="Udmærket">🤩</button>
         <button class="emoji-option" data-emoji="⚡" data-label="Intens" title="Intens">⚡</button>
         <button class="emoji-option" data-emoji="🌧️" data-label="Tung" title="Tung">🌧️</button>
         <button class="emoji-option" data-emoji="🌀" data-label="Kaotisk" title="Kaotisk">🌀</button>
@@ -392,7 +382,7 @@
     <section class="card">
       <h2>Ugekomposition</h2>
       <p class="info">
-        Emoji og BPM fungerer som et ekstra tegnlag oven på lydoptagelsen. BPM beskriver dagens oplevede tempo.
+        Lydene afspilles i rækkefølge med en fast pause på 3 sekunder mellem hver optagelse.
       </p>
       <button id="playWeekBtn" class="primary">Afspil ugekomposition</button>
       <button id="stopWeekBtn" class="secondary" style="margin-top:10px;" disabled>Stop ugekomposition</button>
@@ -409,7 +399,8 @@
 
   <script>
     const MAX_SECONDS = 20;
-    const DB_NAME = "lyden-af-din-uge-v2";
+    const FIXED_PAUSE_MS = 3000;
+    const DB_NAME = "lyden-af-din-uge-v3";
     const STORE_NAME = "recordings";
 
     let db;
@@ -418,6 +409,7 @@
     let recordingTimer;
     let recordingSeconds = 0;
     let currentAudio = null;
+    let currentObjectUrl = null;
     let weekPlaying = false;
     let selectedEmoji = "🙂";
     let selectedEmojiLabel = "Almindelig";
@@ -464,6 +456,7 @@
       return {
         day: Number(day),
         blob: null,
+        mimeType: "",
         emoji: "🙂",
         emojiLabel: "Almindelig",
         bpm: 90,
@@ -534,6 +527,30 @@
       });
     }
 
+    function getRecorderOptions() {
+      if (!window.MediaRecorder) {
+        return {};
+      }
+
+      if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) {
+        return { mimeType: "audio/webm;codecs=opus" };
+      }
+
+      if (MediaRecorder.isTypeSupported("audio/mp4")) {
+        return { mimeType: "audio/mp4" };
+      }
+
+      if (MediaRecorder.isTypeSupported("audio/aac")) {
+        return { mimeType: "audio/aac" };
+      }
+
+      if (MediaRecorder.isTypeSupported("audio/webm")) {
+        return { mimeType: "audio/webm" };
+      }
+
+      return {};
+    }
+
     function formatTime(seconds) {
       const m = String(Math.floor(seconds / 60)).padStart(2, "0");
       const s = String(seconds % 60).padStart(2, "0");
@@ -555,7 +572,6 @@
         const isActive = button.dataset.emoji === selectedEmoji;
         button.classList.toggle("active", isActive);
       });
-
     }
 
     async function loadSelectedDayCharacter() {
@@ -589,41 +605,60 @@
 
     async function startRecording() {
       try {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          statusText.textContent = "Denne browser understøtter ikke optagelse.";
+          return;
+        }
+
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const options = getRecorderOptions();
 
         chunks = [];
-        mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
+        mediaRecorder = new MediaRecorder(stream, options);
 
         mediaRecorder.ondataavailable = event => {
-          if (event.data.size > 0) {
+          if (event.data && event.data.size > 0) {
             chunks.push(event.data);
           }
         };
 
         mediaRecorder.onstop = async () => {
-          const blob = new Blob(chunks, { type: "audio/webm" });
-          const day = Number(daySelect.value);
+          try {
+            const mimeType = mediaRecorder.mimeType || options.mimeType || "";
+            const blob = new Blob(chunks, { type: mimeType });
 
-          const existing = await getItem(day);
-          const item = existing || makeDefaultItem(day);
+            if (blob.size === 0) {
+              statusText.textContent = "Optagelsen var tom. Prøv igen.";
+              return;
+            }
 
-          item.blob = blob;
-          item.createdAt = item.createdAt || new Date().toISOString();
-          item.emoji = selectedEmoji;
-          item.emojiLabel = selectedEmojiLabel;
-          item.bpm = Number(bpmSlider.value);
-          item.note = dayNote.value;
+            const day = Number(daySelect.value);
+            const existing = await getItem(day);
+            const item = existing || makeDefaultItem(day);
 
-          await saveItem(item);
+            item.blob = blob;
+            item.mimeType = mimeType;
+            item.createdAt = item.createdAt || new Date().toISOString();
+            item.emoji = selectedEmoji;
+            item.emojiLabel = selectedEmojiLabel;
+            item.bpm = Number(bpmSlider.value);
+            item.note = dayNote.value;
 
-          stream.getTracks().forEach(track => track.stop());
+            await saveItem(item);
 
-          statusText.textContent = `Dag ${day} er gemt.`;
-          resetRecorderUI();
-          await renderDays();
+            statusText.textContent = `Dag ${day} er gemt.`;
+            await renderDays();
+          } catch (error) {
+            console.error(error);
+            statusText.textContent = "Der skete en fejl, da optagelsen skulle gemmes.";
+          } finally {
+            stream.getTracks().forEach(track => track.stop());
+            resetRecorderUI();
+          }
         };
 
         mediaRecorder.start();
+
         recordBtn.disabled = true;
         stopBtn.disabled = false;
         statusText.textContent = "Optager...";
@@ -639,8 +674,9 @@
         }, 1000);
 
       } catch (error) {
-        statusText.textContent = "Mikrofonadgang blev afvist eller er ikke understøttet.";
         console.error(error);
+        statusText.textContent = "Mikrofonadgang blev afvist eller er ikke understøttet.";
+        resetRecorderUI();
       }
     }
 
@@ -698,6 +734,7 @@
         if (hasRecording) {
           const audio = document.createElement("audio");
           audio.controls = true;
+          audio.preload = "metadata";
           audio.src = URL.createObjectURL(item.blob);
           dayEl.appendChild(audio);
         }
@@ -742,67 +779,93 @@
       }
     }
 
-  async function playWeekComposition() {
-  const items = await getAllItems();
-  const recordings = items.filter(item => item.blob);
+    async function playOneRecording(item) {
+      return new Promise(resolve => {
+        currentObjectUrl = URL.createObjectURL(item.blob);
+        currentAudio = new Audio();
 
-  if (recordings.length === 0) {
-    statusText.textContent = "Der er ingen optagelser endnu.";
-    return;
-  }
+        let resolved = false;
 
-  weekPlaying = true;
-  playWeekBtn.disabled = true;
-  stopWeekBtn.disabled = false;
+        const finish = () => {
+          if (resolved) return;
+          resolved = true;
 
-  for (const item of recordings) {
-    if (!weekPlaying) break;
+          if (currentAudio) {
+            currentAudio.pause();
+            currentAudio.src = "";
+            currentAudio.load();
+          }
 
-    statusText.textContent = `Afspiller dag ${item.day}: ${item.emoji || "🙂"} ${item.bpm || 90} BPM`;
+          if (currentObjectUrl) {
+            URL.revokeObjectURL(currentObjectUrl);
+          }
 
-    const objectUrl = URL.createObjectURL(item.blob);
+          currentAudio = null;
+          currentObjectUrl = null;
+          resolve();
+        };
 
-    await new Promise(resolve => {
-      currentAudio = new Audio();
-      currentAudio.src = objectUrl;
-      currentAudio.preload = "auto";
+        currentAudio.src = currentObjectUrl;
+        currentAudio.preload = "auto";
+        currentAudio.onended = finish;
+        currentAudio.onerror = finish;
 
-      const finish = () => {
-        URL.revokeObjectURL(objectUrl);
-        resolve();
-      };
-
-      currentAudio.onended = finish;
-      currentAudio.onerror = finish;
-
-      currentAudio.play().catch(error => {
-        console.error(`Kunne ikke afspille dag ${item.day}:`, error);
-        statusText.textContent = `Kunne ikke afspille dag ${item.day}. Springer videre.`;
-        finish();
+        currentAudio.play().catch(error => {
+          console.error(`Kunne ikke afspille dag ${item.day}:`, error);
+          statusText.textContent = `Kunne ikke afspille dag ${item.day}. Springer videre.`;
+          finish();
+        });
       });
-    });
+    }
 
-    if (!weekPlaying) break;
+    async function playWeekComposition() {
+      const items = await getAllItems();
+      const recordings = items.filter(item => item.blob);
 
- const pauseMs = 3000;
-await new Promise(resolve => setTimeout(resolve, pauseMs));
-  }
+      if (recordings.length === 0) {
+        statusText.textContent = "Der er ingen optagelser endnu.";
+        return;
+      }
 
-  weekPlaying = false;
-  currentAudio = null;
-  playWeekBtn.disabled = false;
-  stopWeekBtn.disabled = true;
-  statusText.textContent = "Ugekompositionen er færdig.";
-}
+      weekPlaying = true;
+      playWeekBtn.disabled = true;
+      stopWeekBtn.disabled = false;
+
+      for (const item of recordings) {
+        if (!weekPlaying) break;
+
+        statusText.textContent = `Afspiller dag ${item.day}: ${item.emoji || "🙂"} ${item.bpm || 90} BPM`;
+
+        await playOneRecording(item);
+
+        if (!weekPlaying) break;
+
+        await new Promise(resolve => setTimeout(resolve, FIXED_PAUSE_MS));
+      }
+
+      weekPlaying = false;
+      currentAudio = null;
+      currentObjectUrl = null;
+      playWeekBtn.disabled = false;
+      stopWeekBtn.disabled = true;
+      statusText.textContent = "Ugekompositionen er færdig.";
+    }
 
     function stopWeekComposition() {
       weekPlaying = false;
 
       if (currentAudio) {
         currentAudio.pause();
-        currentAudio.currentTime = 0;
+        currentAudio.src = "";
+        currentAudio.load();
       }
 
+      if (currentObjectUrl) {
+        URL.revokeObjectURL(currentObjectUrl);
+      }
+
+      currentAudio = null;
+      currentObjectUrl = null;
       playWeekBtn.disabled = false;
       stopWeekBtn.disabled = true;
       statusText.textContent = "Ugekompositionen er stoppet.";
@@ -843,7 +906,7 @@ await new Promise(resolve => setTimeout(resolve, pauseMs));
     });
 
     async function init() {
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder) {
         statusText.textContent = "Denne browser understøtter ikke optagelse.";
         recordBtn.disabled = true;
         return;
