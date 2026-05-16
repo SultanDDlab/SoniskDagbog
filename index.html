@@ -81,12 +81,12 @@
       line-height: 1.4;
     }
 
-    select, textarea, input[type="file"] {
+    select, textarea, input[type="file"], input[type="date"] {
       width: 100%;
       font: inherit;
     }
 
-    select {
+    select, input[type="date"] {
       padding: 14px;
       border-radius: 14px;
       border: 1px solid var(--border);
@@ -280,6 +280,9 @@
         <option value="7">Dag 7</option>
       </select>
 
+      <label for="recordingDate">Dato for optagelsen</label>
+      <input id="recordingDate" type="date" />
+
       <div class="timer" id="timer">00:00</div>
 
       <div class="progress-wrap">
@@ -343,7 +346,7 @@
 
       <label for="exportSelect">Eksportér</label>
       <select id="exportSelect">
-        <option value="">Vælg eksport…</option>
+        <option value="">Vælg eksport...</option>
         <option value="audio">💾 Gem som lydfil (.wav)</option>
         <option value="image">🖼️ Gem ugeskema som billede (.png)</option>
       </select>
@@ -379,6 +382,21 @@
     let currentObjectUrl = null;
     let audioUnlocked = false;
 
+    function todayISODate() {
+      return new Date().toISOString().slice(0, 10);
+    }
+
+    function formatDisplayDate(dateString) {
+      if (!dateString) return "";
+      const date = new Date(`${dateString}T00:00:00`);
+      return date.toLocaleDateString("da-DK", {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+        year: "numeric"
+      });
+    }
+
     function unlockAudio() {
       if (audioUnlocked) return;
       audioUnlocked = true;
@@ -402,6 +420,7 @@
     const progress         = document.getElementById("progress");
     const statusText       = document.getElementById("statusText");
     const daySelect        = document.getElementById("daySelect");
+    const recordingDate    = document.getElementById("recordingDate");
     const daysContainer    = document.getElementById("daysContainer");
     const playWeekBtn      = document.getElementById("playWeekBtn");
     const stopWeekBtn      = document.getElementById("stopWeekBtn");
@@ -414,8 +433,6 @@
     const dayNote          = document.getElementById("dayNote");
     const saveCharacterBtn = document.getElementById("saveCharacterBtn");
     const fileInput        = document.getElementById("fileInput");
-
-    // ── IndexedDB ─────────────────────────────────────────────────────────────
 
     function openDB() {
       return new Promise((resolve, reject) => {
@@ -432,7 +449,17 @@
     }
 
     function makeDefaultItem(day) {
-      return { day: Number(day), blob: null, mimeType: "", emoji: "🙂", emojiLabel: "Almindelig", note: "", createdAt: null, updatedAt: new Date().toISOString() };
+      return {
+        day: Number(day),
+        blob: null,
+        mimeType: "",
+        emoji: "🙂",
+        emojiLabel: "Almindelig",
+        note: "",
+        recordingDate: todayISODate(),
+        createdAt: null,
+        updatedAt: new Date().toISOString()
+      };
     }
 
     function saveItem(item) {
@@ -486,17 +513,23 @@
       });
     }
 
-    // ── Recording ─────────────────────────────────────────────────────────────
-
     function getRecorderOptions() {
       if (!window.MediaRecorder || !MediaRecorder.isTypeSupported) return {};
-      const types = ["audio/mp4","audio/mp4;codecs=mp4a.40.2","audio/aac","audio/webm;codecs=opus","audio/webm"];
-      for (const type of types) { if (MediaRecorder.isTypeSupported(type)) return { mimeType: type }; }
+      const types = [
+        "audio/mp4",
+        "audio/mp4;codecs=mp4a.40.2",
+        "audio/aac",
+        "audio/webm;codecs=opus",
+        "audio/webm"
+      ];
+      for (const type of types) {
+        if (MediaRecorder.isTypeSupported(type)) return { mimeType: type };
+      }
       return {};
     }
 
     function formatTime(seconds) {
-      return `${String(Math.floor(seconds/60)).padStart(2,"0")}:${String(seconds%60).padStart(2,"0")}`;
+      return `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
     }
 
     function resetRecorderUI() {
@@ -518,6 +551,7 @@
       selectedEmoji = item?.emoji || "🙂";
       selectedEmojiLabel = item?.emojiLabel || "Almindelig";
       dayNote.value = item?.note || "";
+      recordingDate.value = item?.recordingDate || todayISODate();
       updateEmojiUI();
     }
 
@@ -525,9 +559,12 @@
       const day = Number(daySelect.value);
       const existing = await getItem(day);
       const item = existing || makeDefaultItem(day);
+
       item.emoji = selectedEmoji;
       item.emojiLabel = selectedEmojiLabel;
       item.note = dayNote.value;
+      item.recordingDate = recordingDate.value || todayISODate();
+
       await saveItem(item);
       await renderDays();
       statusText.textContent = `Dag ${day} karakter er gemt.`;
@@ -537,12 +574,15 @@
       const day = Number(daySelect.value);
       const existing = await getItem(day);
       const item = existing || makeDefaultItem(day);
+
       item.blob = blob;
       item.mimeType = mimeType || blob.type || "";
       item.createdAt = item.createdAt || new Date().toISOString();
+      item.recordingDate = recordingDate.value || todayISODate();
       item.emoji = selectedEmoji;
       item.emojiLabel = selectedEmojiLabel;
       item.note = dayNote.value;
+
       await saveItem(item);
       await renderDays();
       statusText.textContent = `Dag ${day} er gemt.`;
@@ -554,16 +594,27 @@
           statusText.textContent = "Denne browser understøtter ikke direkte optagelse. Brug upload-feltet.";
           return;
         }
+
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         const options = getRecorderOptions();
+
         chunks = [];
         mediaRecorder = new MediaRecorder(stream, options);
-        mediaRecorder.ondataavailable = event => { if (event.data && event.data.size > 0) chunks.push(event.data); };
+
+        mediaRecorder.ondataavailable = event => {
+          if (event.data && event.data.size > 0) chunks.push(event.data);
+        };
+
         mediaRecorder.onstop = async () => {
           try {
             const mimeType = mediaRecorder.mimeType || options.mimeType || "";
             const blob = new Blob(chunks, { type: mimeType });
-            if (blob.size === 0) { statusText.textContent = "Optagelsen var tom. Prøv igen eller brug upload."; return; }
+
+            if (blob.size === 0) {
+              statusText.textContent = "Optagelsen var tom. Prøv igen eller brug upload.";
+              return;
+            }
+
             await saveAudioForSelectedDay(blob, mimeType);
           } catch (error) {
             console.error(error);
@@ -573,14 +624,17 @@
             resetRecorderUI();
           }
         };
+
         mediaRecorder.start(1000);
         recordBtn.disabled = true;
         stopBtn.disabled = false;
         statusText.textContent = `Optager... Format: ${mediaRecorder.mimeType || "standard"}`;
+
         recordingTimer = setInterval(() => {
           recordingSeconds++;
           timer.textContent = formatTime(recordingSeconds);
           progress.style.width = `${(recordingSeconds / MAX_SECONDS) * 100}%`;
+
           if (recordingSeconds >= MAX_SECONDS) stopRecording();
         }, 1000);
       } catch (error) {
@@ -598,15 +652,20 @@
     async function handleFileUpload(event) {
       const file = event.target.files[0];
       if (!file) return;
-      if (!file.type.startsWith("audio/")) { statusText.textContent = "Vælg venligst en lydfil."; fileInput.value = ""; return; }
+
+      if (!file.type.startsWith("audio/")) {
+        statusText.textContent = "Vælg venligst en lydfil.";
+        fileInput.value = "";
+        return;
+      }
+
       await saveAudioForSelectedDay(file, file.type);
       fileInput.value = "";
     }
 
-    // ── Render days ───────────────────────────────────────────────────────────
-
     async function renderDays() {
       daysContainer.innerHTML = "";
+
       for (let day = 1; day <= 7; day++) {
         const item = await getItem(day);
         const hasRecording = Boolean(item?.blob);
@@ -633,10 +692,19 @@
         if (hasCharacter) {
           const meta = document.createElement("div");
           meta.className = "meta-row";
+
           const emojiPill = document.createElement("span");
           emojiPill.className = "pill";
           emojiPill.textContent = `${item.emoji || "🙂"} ${item.emojiLabel || "Almindelig"}`;
           meta.appendChild(emojiPill);
+
+          if (item.recordingDate) {
+            const datePill = document.createElement("span");
+            datePill.className = "pill";
+            datePill.textContent = formatDisplayDate(item.recordingDate);
+            meta.appendChild(datePill);
+          }
+
           dayEl.appendChild(meta);
         }
 
@@ -684,8 +752,6 @@
       }
     }
 
-    // ── Playback ──────────────────────────────────────────────────────────────
-
     function setWeekStatus(text) {
       weekStatusText.style.display = "block";
       weekStatusText.textContent = text;
@@ -698,11 +764,17 @@
         if (previousUrl) URL.revokeObjectURL(previousUrl);
 
         let resolved = false;
+
         const finish = () => {
           if (resolved) return;
           resolved = true;
           sharedAudio.pause();
-          if (currentObjectUrl) { URL.revokeObjectURL(currentObjectUrl); currentObjectUrl = null; }
+
+          if (currentObjectUrl) {
+            URL.revokeObjectURL(currentObjectUrl);
+            currentObjectUrl = null;
+          }
+
           resolve();
         };
 
@@ -711,12 +783,19 @@
           setWeekStatus(`Kunne ikke afspille dag ${item.day}. Springer videre.`);
           finish();
         };
+
         sharedAudio.oncanplaythrough = null;
         sharedAudio.src = currentObjectUrl;
         sharedAudio.load();
+
         sharedAudio.oncanplaythrough = () => {
           sharedAudio.oncanplaythrough = null;
-          if (!weekPlaying) { finish(); return; }
+
+          if (!weekPlaying) {
+            finish();
+            return;
+          }
+
           sharedAudio.play().catch(err => {
             console.error(`play() rejected dag ${item.day}:`, err);
             setWeekStatus(`Kunne ikke afspille dag ${item.day}. Springer videre.`);
@@ -729,17 +808,28 @@
     async function playWeekComposition() {
       const items = await getAllItems();
       const recordings = items.filter(item => item.blob);
-      if (recordings.length === 0) { setWeekStatus("Der er ingen optagelser endnu."); return; }
+
+      if (recordings.length === 0) {
+        setWeekStatus("Der er ingen optagelser endnu.");
+        return;
+      }
+
       weekPlaying = true;
       playWeekBtn.disabled = true;
       stopWeekBtn.disabled = false;
+
       for (const item of recordings) {
         if (!weekPlaying) break;
-        setWeekStatus(`Afspiller dag ${item.day}: ${item.emoji || "🙂"} ${item.emojiLabel || ""}`);
+
+        const dateLabel = item.recordingDate ? `, ${formatDisplayDate(item.recordingDate)}` : "";
+        setWeekStatus(`Afspiller dag ${item.day}${dateLabel}: ${item.emoji || "🙂"} ${item.emojiLabel || ""}`);
+
         await playOneRecording(item);
+
         if (!weekPlaying) break;
         await new Promise(resolve => setTimeout(resolve, FIXED_PAUSE_MS));
       }
+
       weekPlaying = false;
       playWeekBtn.disabled = false;
       stopWeekBtn.disabled = true;
@@ -751,13 +841,16 @@
       sharedAudio.pause();
       sharedAudio.src = "";
       sharedAudio.load();
-      if (currentObjectUrl) { URL.revokeObjectURL(currentObjectUrl); currentObjectUrl = null; }
+
+      if (currentObjectUrl) {
+        URL.revokeObjectURL(currentObjectUrl);
+        currentObjectUrl = null;
+      }
+
       playWeekBtn.disabled = false;
       stopWeekBtn.disabled = true;
       setWeekStatus("Ugekompositionen er stoppet.");
     }
-
-    // ── Export: WAV ───────────────────────────────────────────────────────────
 
     function setExportStatus(text) {
       exportStatusText.style.display = "block";
@@ -777,15 +870,18 @@
       const totalLength = buffers.reduce((sum, b) => sum + b.length, 0);
       const channels = Math.max(...buffers.map(b => b.numberOfChannels));
       const output = ctx.createBuffer(channels, totalLength, ctx.sampleRate);
+
       for (let ch = 0; ch < channels; ch++) {
         const outData = output.getChannelData(ch);
         let offset = 0;
+
         for (const buf of buffers) {
           const srcData = ch < buf.numberOfChannels ? buf.getChannelData(ch) : new Float32Array(buf.length);
           outData.set(srcData, offset);
           offset += buf.length;
         }
       }
+
       return output;
     }
 
@@ -799,14 +895,29 @@
       const dataSize = numSamples * blockAlign;
       const wavBuffer = new ArrayBuffer(44 + dataSize);
       const view = new DataView(wavBuffer);
-      const writeStr = (offset, str) => { for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i)); };
-      writeStr(0, "RIFF"); view.setUint32(4, 36 + dataSize, true);
-      writeStr(8, "WAVE"); writeStr(12, "fmt ");
-      view.setUint32(16, 16, true); view.setUint16(20, 1, true);
-      view.setUint16(22, numChannels, true); view.setUint32(24, sampleRate, true);
-      view.setUint32(28, sampleRate * blockAlign, true); view.setUint16(32, blockAlign, true);
-      view.setUint16(34, bitDepth, true); writeStr(36, "data"); view.setUint32(40, dataSize, true);
+
+      const writeStr = (offset, str) => {
+        for (let i = 0; i < str.length; i++) {
+          view.setUint8(offset + i, str.charCodeAt(i));
+        }
+      };
+
+      writeStr(0, "RIFF");
+      view.setUint32(4, 36 + dataSize, true);
+      writeStr(8, "WAVE");
+      writeStr(12, "fmt ");
+      view.setUint32(16, 16, true);
+      view.setUint16(20, 1, true);
+      view.setUint16(22, numChannels, true);
+      view.setUint32(24, sampleRate, true);
+      view.setUint32(28, sampleRate * blockAlign, true);
+      view.setUint16(32, blockAlign, true);
+      view.setUint16(34, bitDepth, true);
+      writeStr(36, "data");
+      view.setUint32(40, dataSize, true);
+
       let offset = 44;
+
       for (let i = 0; i < numSamples; i++) {
         for (let ch = 0; ch < numChannels; ch++) {
           const sample = Math.max(-1, Math.min(1, buffer.getChannelData(ch)[i]));
@@ -814,30 +925,44 @@
           offset += 2;
         }
       }
+
       return new Blob([wavBuffer], { type: "audio/wav" });
     }
 
     async function exportAudio() {
       const items = await getAllItems();
       const recordings = items.filter(item => item.blob);
-      if (recordings.length === 0) { setExportStatus("Ingen optagelser at eksportere."); return; }
-      setExportStatus("Forbereder lydfil…");
+
+      if (recordings.length === 0) {
+        setExportStatus("Ingen optagelser at eksportere.");
+        return;
+      }
+
+      setExportStatus("Forbereder lydfil...");
       exportBtn.disabled = true;
+
       try {
         const ctx = new (window.AudioContext || window.webkitAudioContext)();
         const silence = makeSilenceBuffer(ctx, FIXED_PAUSE_MS / 1000);
         const allBuffers = [];
+
         for (let i = 0; i < recordings.length; i++) {
-          setExportStatus(`Behandler dag ${recordings[i].day}…`);
+          setExportStatus(`Behandler dag ${recordings[i].day}...`);
           allBuffers.push(await blobToAudioBuffer(recordings[i].blob, ctx));
           if (i < recordings.length - 1) allBuffers.push(silence);
         }
-        setExportStatus("Sammensætter WAV-fil…");
+
+        setExportStatus("Sammensætter WAV-fil...");
         const wav = audioBufferToWav(concatAudioBuffers(ctx, allBuffers));
+
         await ctx.close();
+
         const url = URL.createObjectURL(wav);
         const a = document.createElement("a");
-        a.href = url; a.download = "lyden-af-min-uge.wav"; a.click();
+        a.href = url;
+        a.download = "lyden-af-min-uge.wav";
+        a.click();
+
         setTimeout(() => URL.revokeObjectURL(url), 5000);
         setExportStatus("Lydfilen er klar til download.");
       } catch (err) {
@@ -847,8 +972,6 @@
         exportBtn.disabled = false;
       }
     }
-
-    // ── Export: PNG image ─────────────────────────────────────────────────────
 
     function roundRect(ctx, x, y, w, h, r) {
       ctx.beginPath();
@@ -866,82 +989,114 @@
 
     async function exportImage() {
       const items = await getAllItems();
-      if (items.length === 0) { setExportStatus("Ingen data at eksportere."); return; }
-      setExportStatus("Genererer billede…");
+
+      if (items.length === 0) {
+        setExportStatus("Ingen data at eksportere.");
+        return;
+      }
+
+      setExportStatus("Genererer billede...");
       exportBtn.disabled = true;
+
       try {
-        const W = 840, PAD = 32, COL = 7;
+        const W = 840;
+        const PAD = 32;
+        const COL = 7;
         const colW = (W - PAD * 2) / COL;
-        const HEADER_H = 90, DAY_H = 190;
+        const HEADER_H = 90;
+        const DAY_H = 190;
         const H = HEADER_H + DAY_H + PAD;
 
         const canvas = document.createElement("canvas");
-        canvas.width = W; canvas.height = H;
+        canvas.width = W;
+        canvas.height = H;
+
         const ctx = canvas.getContext("2d");
 
-        // Background
         ctx.fillStyle = "#f6f3ed";
         ctx.fillRect(0, 0, W, H);
 
-        // Title
         ctx.fillStyle = "#1e1e1e";
         ctx.font = "bold 28px system-ui, sans-serif";
         ctx.textAlign = "left";
         ctx.fillText("Lyden af din uge", PAD, 46);
 
-        // Date
+        const datedItems = items
+          .filter(item => item.recordingDate)
+          .sort((a, b) => a.recordingDate.localeCompare(b.recordingDate));
+
+        const dateText = datedItems.length
+          ? `${formatDisplayDate(datedItems[0].recordingDate)} - ${formatDisplayDate(datedItems[datedItems.length - 1].recordingDate)}`
+          : "Ingen datoer valgt";
+
         ctx.fillStyle = "#6d6d6d";
         ctx.font = "16px system-ui, sans-serif";
-        ctx.fillText(new Date().toLocaleDateString("da-DK", { weekday: "long", year: "numeric", month: "long", day: "numeric" }), PAD, 72);
+        ctx.fillText(dateText, PAD, 72);
 
         for (let i = 0; i < 7; i++) {
           const x = PAD + i * colW;
           const y = HEADER_H;
           const item = items.find(it => it.day === i + 1) || null;
 
-          // Card
           ctx.fillStyle = item ? "#ffffff" : "#ece6dc";
           roundRect(ctx, x + 4, y, colW - 8, DAY_H - 8, 16);
           ctx.fill();
-          ctx.strokeStyle = "#ddd6ca"; ctx.lineWidth = 1;
+
+          ctx.strokeStyle = "#ddd6ca";
+          ctx.lineWidth = 1;
           roundRect(ctx, x + 4, y, colW - 8, DAY_H - 8, 16);
           ctx.stroke();
 
-          // Day label
           ctx.fillStyle = "#6d6d6d";
           ctx.font = "bold 12px system-ui, sans-serif";
           ctx.textAlign = "center";
           ctx.fillText(`Dag ${i + 1}`, x + colW / 2, y + 22);
 
           if (item) {
-            // Emoji
-            ctx.font = "44px serif";
-            ctx.fillText(item.emoji || "🙂", x + colW / 2, y + 78);
+            if (item.recordingDate) {
+              ctx.fillStyle = "#6d6d6d";
+              ctx.font = "10px system-ui, sans-serif";
+              ctx.fillText(formatDisplayDate(item.recordingDate), x + colW / 2, y + 38);
+            }
 
-            // Label
+            ctx.font = "44px serif";
+            ctx.fillText(item.emoji || "🙂", x + colW / 2, y + 84);
+
             ctx.fillStyle = "#1e1e1e";
             ctx.font = "bold 11px system-ui, sans-serif";
-            ctx.fillText(item.emojiLabel || "", x + colW / 2, y + 100);
+            ctx.fillText(item.emojiLabel || "", x + colW / 2, y + 106);
 
-            // Note (word-wrapped)
             if (item.note) {
               ctx.fillStyle = "#6d6d6d";
               ctx.font = "10px system-ui, sans-serif";
+
               const maxW = colW - 16;
               const words = item.note.split(" ");
-              let line = "", lineY = y + 118;
+              let line = "";
+              let lineY = y + 124;
+
               for (const word of words) {
                 const test = line ? line + " " + word : word;
+
                 if (ctx.measureText(test).width > maxW && line) {
                   ctx.fillText(line, x + colW / 2, lineY);
-                  line = word; lineY += 13;
-                  if (lineY > y + DAY_H - 24) { ctx.fillText("…", x + colW / 2, lineY); break; }
-                } else { line = test; }
+                  line = word;
+                  lineY += 13;
+
+                  if (lineY > y + DAY_H - 24) {
+                    ctx.fillText("...", x + colW / 2, lineY);
+                    break;
+                  }
+                } else {
+                  line = test;
+                }
               }
-              if (line && lineY <= y + DAY_H - 24) ctx.fillText(line, x + colW / 2, lineY);
+
+              if (line && lineY <= y + DAY_H - 24) {
+                ctx.fillText(line, x + colW / 2, lineY);
+              }
             }
 
-            // Recording indicator dot
             if (item.blob) {
               ctx.fillStyle = "#1f4f46";
               ctx.beginPath();
@@ -951,11 +1106,10 @@
           } else {
             ctx.fillStyle = "#bbb";
             ctx.font = "32px serif";
-            ctx.fillText("—", x + colW / 2, y + 82);
+            ctx.fillText("-", x + colW / 2, y + 82);
           }
         }
 
-        // Footer
         ctx.fillStyle = "#aaa";
         ctx.font = "11px system-ui, sans-serif";
         ctx.textAlign = "right";
@@ -964,20 +1118,22 @@
         canvas.toBlob(blob => {
           const url = URL.createObjectURL(blob);
           const a = document.createElement("a");
-          a.href = url; a.download = "lyden-af-min-uge.png"; a.click();
+
+          a.href = url;
+          a.download = "lyden-af-min-uge.png";
+          a.click();
+
           setTimeout(() => URL.revokeObjectURL(url), 5000);
+
           setExportStatus("Billedet er klar til download.");
           exportBtn.disabled = false;
         }, "image/png");
-
       } catch (err) {
         console.error(err);
         setExportStatus("Fejl ved eksport af billede.");
         exportBtn.disabled = false;
       }
     }
-
-    // ── Event listeners ───────────────────────────────────────────────────────
 
     recordBtn.addEventListener("click", startRecording);
     stopBtn.addEventListener("click", stopRecording);
@@ -1000,6 +1156,7 @@
     emojiGrid.addEventListener("click", event => {
       const button = event.target.closest(".emoji-option");
       if (!button) return;
+
       selectedEmoji = button.dataset.emoji;
       selectedEmojiLabel = button.dataset.label;
       updateEmojiUI();
@@ -1008,24 +1165,29 @@
     clearAllBtn.addEventListener("click", async () => {
       const confirmed = confirm("Vil du slette alle syv dage?");
       if (!confirmed) return;
+
       await clearAllItems();
       stopWeekComposition();
       await renderDays();
       await loadSelectedDayCharacter();
+
       statusText.textContent = "Alle dage er slettet.";
     });
 
-    // ── Init ──────────────────────────────────────────────────────────────────
-
     async function init() {
       db = await openDB();
+
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder) {
         statusText.textContent = "Direkte optagelse understøttes muligvis ikke. Brug upload-feltet.";
         recordBtn.disabled = true;
       }
+
       if (navigator.storage && navigator.storage.persist) {
-        try { await navigator.storage.persist(); } catch (e) {}
+        try {
+          await navigator.storage.persist();
+        } catch (e) {}
       }
+
       updateEmojiUI();
       await loadSelectedDayCharacter();
       await renderDays();
