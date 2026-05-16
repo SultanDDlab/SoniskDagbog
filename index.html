@@ -373,6 +373,7 @@
       <p class="info">
         Lydene afspilles i rækkefølge med en fast pause på 3 sekunder mellem hver optagelse.
       </p>
+      <div class="status" id="weekStatusText" style="display:none;"></div>
       <button id="playWeekBtn" class="primary">Afspil ugekomposition</button>
       <button id="stopWeekBtn" class="secondary" style="margin-top:10px;" disabled>Stop ugekomposition</button>
     </section>
@@ -436,6 +437,7 @@
     const daysContainer = document.getElementById("daysContainer");
     const playWeekBtn = document.getElementById("playWeekBtn");
     const stopWeekBtn = document.getElementById("stopWeekBtn");
+    const weekStatusText = document.getElementById("weekStatusText");
     const clearAllBtn = document.getElementById("clearAllBtn");
     const emojiGrid = document.getElementById("emojiGrid");
     const dayNote = document.getElementById("dayNote");
@@ -786,7 +788,8 @@
         sharedAudio.onended = finish;
         sharedAudio.onerror = () => {
           console.error(`Playback error dag ${item.day}:`, sharedAudio.error);
-          statusText.textContent = `Kunne ikke afspille dag ${item.day}. Springer videre.`;
+          weekStatusText.style.display = "block";
+          weekStatusText.textContent = `Kunne ikke afspille dag ${item.day}. Springer videre.`;
           finish();
         };
 
@@ -804,7 +807,8 @@
           }
           sharedAudio.play().catch(err => {
             console.error(`play() rejected dag ${item.day}:`, err);
-            statusText.textContent = `Kunne ikke afspille dag ${item.day}. Springer videre.`;
+            weekStatusText.style.display = "block";
+            weekStatusText.textContent = `Kunne ikke afspille dag ${item.day}. Springer videre.`;
             finish();
           });
         };
@@ -816,7 +820,8 @@
       const recordings = items.filter(item => item.blob);
 
       if (recordings.length === 0) {
-        statusText.textContent = "Der er ingen optagelser endnu.";
+        weekStatusText.style.display = "block";
+        weekStatusText.textContent = "Der er ingen optagelser endnu.";
         return;
       }
 
@@ -827,7 +832,8 @@
       for (const item of recordings) {
         if (!weekPlaying) break;
 
-        statusText.textContent = `Afspiller dag ${item.day}: ${item.emoji || "🙂"} ${item.emojiLabel || ""}`;
+        weekStatusText.style.display = "block";
+        weekStatusText.textContent = `Afspiller dag ${item.day}: ${item.emoji || "🙂"} ${item.emojiLabel || ""}`;
 
         await playOneRecording(item);
 
@@ -839,7 +845,7 @@
       weekPlaying = false;
       playWeekBtn.disabled = false;
       stopWeekBtn.disabled = true;
-      statusText.textContent = "Ugekompositionen er færdig.";
+      weekStatusText.textContent = "Ugekompositionen er færdig.";
     }
 
     function stopWeekComposition() {
@@ -853,7 +859,8 @@
       }
       playWeekBtn.disabled = false;
       stopWeekBtn.disabled = true;
-      statusText.textContent = "Ugekompositionen er stoppet.";
+      weekStatusText.style.display = "block";
+      weekStatusText.textContent = "Ugekompositionen er stoppet.";
     }
 
     recordBtn.addEventListener("click", startRecording);
