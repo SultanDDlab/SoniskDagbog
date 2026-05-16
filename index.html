@@ -88,7 +88,7 @@
 
     select,
     textarea,
-    input[type="range"] {
+    input[type="file"] {
       width: 100%;
       font: inherit;
     }
@@ -108,6 +108,14 @@
       padding: 12px;
       resize: vertical;
       min-height: 58px;
+      background: #fffdf9;
+      color: var(--text);
+    }
+
+    input[type="file"] {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px;
       background: #fffdf9;
       color: var(--text);
     }
@@ -202,29 +210,6 @@
       background: var(--soft);
     }
 
-    .bpm-box {
-      margin-bottom: 16px;
-    }
-
-    .bpm-value {
-      text-align: center;
-      font-size: 1.4rem;
-      font-weight: 800;
-      margin: 4px 0 6px;
-    }
-
-    .bpm-labels {
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.8rem;
-      color: var(--muted);
-      margin-top: 2px;
-    }
-
-    input[type="range"] {
-      accent-color: var(--accent);
-    }
-
     .days {
       display: grid;
       gap: 10px;
@@ -291,6 +276,12 @@
       margin-top: 8px;
     }
 
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 16px 0;
+    }
+
     @media (min-width: 480px) {
       .button-row {
         grid-template-columns: 1fr 1fr;
@@ -308,7 +299,7 @@
     <header>
       <h1>Lyden af din uge</h1>
       <p class="subtitle">
-        Optag én kort lyd om dagen. Giv dagen en karakter med emoji, tempo og note. Efter syv dage samles lydene til en sonisk dagbog.
+        Optag én kort lyd om dagen. Giv dagen en karakter med emoji og note. Efter syv dage samles lydene til en sonisk dagbog.
       </p>
     </header>
 
@@ -337,6 +328,14 @@
         <button id="recordBtn" class="primary">Start optagelse</button>
         <button id="stopBtn" class="secondary" disabled>Stop</button>
       </div>
+
+      <div class="divider"></div>
+
+      <label for="fileInput">Alternativ: upload lydfil</label>
+      <input id="fileInput" type="file" accept="audio/*" />
+      <p class="info">
+        Brug dette hvis optagelse direkte i Safari/iPhone driller. Filen gemmes stadig kun lokalt i browseren.
+      </p>
     </section>
 
     <section class="card">
@@ -352,16 +351,6 @@
         <button class="emoji-option" data-emoji="🌀" data-label="Kaotisk" title="Kaotisk">🌀</button>
       </div>
 
-      <div class="bpm-box">
-        <label for="bpmSlider">Dagens tempo</label>
-        <div class="bpm-value"><span id="bpmValue">90</span> BPM</div>
-        <input id="bpmSlider" type="range" min="40" max="180" step="1" value="90" />
-        <div class="bpm-labels">
-          <span>Langsom</span>
-          <span>Travl</span>
-        </div>
-      </div>
-
       <label for="dayNote">Kort note</label>
       <textarea id="dayNote" placeholder="Hvad gjorde denne lyd til dagens lyd?"></textarea>
 
@@ -370,7 +359,7 @@
       </button>
 
       <p class="info">
-        Emoji og BPM fungerer som et ekstra tegnlag oven på lydoptagelsen. BPM beskriver dagens oplevede tempo.
+        Emoji og note fungerer som et semiotisk lag oven på lydoptagelsen. Brugeren giver dagen en stemning og en kort kontekst.
       </p>
     </section>
 
@@ -400,13 +389,13 @@
   <script>
     const MAX_SECONDS = 20;
     const FIXED_PAUSE_MS = 3000;
-    const DB_NAME = "lyden-af-din-uge-v3";
+    const DB_NAME = "lyden-af-din-uge-no-bpm-v1";
     const STORE_NAME = "recordings";
 
     let db;
-    let mediaRecorder;
+    let mediaRecorder = null;
     let chunks = [];
-    let recordingTimer;
+    let recordingTimer = null;
     let recordingSeconds = 0;
     let currentAudio = null;
     let currentObjectUrl = null;
@@ -425,30 +414,23 @@
     const stopWeekBtn = document.getElementById("stopWeekBtn");
     const clearAllBtn = document.getElementById("clearAllBtn");
     const emojiGrid = document.getElementById("emojiGrid");
-    const bpmSlider = document.getElementById("bpmSlider");
-    const bpmValue = document.getElementById("bpmValue");
     const dayNote = document.getElementById("dayNote");
     const saveCharacterBtn = document.getElementById("saveCharacterBtn");
+    const fileInput = document.getElementById("fileInput");
 
     function openDB() {
       return new Promise((resolve, reject) => {
         const request = indexedDB.open(DB_NAME, 1);
 
-        request.onupgradeneeded = function(event) {
+        request.onupgradeneeded = event => {
           const database = event.target.result;
-
           if (!database.objectStoreNames.contains(STORE_NAME)) {
             database.createObjectStore(STORE_NAME, { keyPath: "day" });
           }
         };
 
-        request.onsuccess = function(event) {
-          resolve(event.target.result);
-        };
-
-        request.onerror = function() {
-          reject(request.error);
-        };
+        request.onsuccess = event => resolve(event.target.result);
+        request.onerror = () => reject(request.error);
       });
     }
 
@@ -459,7 +441,6 @@
         mimeType: "",
         emoji: "🙂",
         emojiLabel: "Almindelig",
-        bpm: 90,
         note: "",
         createdAt: null,
         updatedAt: new Date().toISOString()
@@ -497,8 +478,7 @@
         const request = store.getAll();
 
         request.onsuccess = () => {
-          const result = request.result.sort((a, b) => a.day - b.day);
-          resolve(result);
+          resolve(request.result.sort((a, b) => a.day - b.day));
         };
 
         request.onerror = () => reject(request.error);
@@ -527,29 +507,27 @@
       });
     }
 
-function getRecorderOptions() {
-  if (!window.MediaRecorder || !MediaRecorder.isTypeSupported) {
-    return {};
-  }
+    function getRecorderOptions() {
+      if (!window.MediaRecorder || !MediaRecorder.isTypeSupported) {
+        return {};
+      }
 
-  const types = [
-    "audio/mp4",
-    "audio/mp4;codecs=mp4a.40.2",
-    "audio/aac",
-    "audio/webm;codecs=opus",
-    "audio/webm"
-  ];
+      const supportedTypes = [
+        "audio/mp4",
+        "audio/mp4;codecs=mp4a.40.2",
+        "audio/aac",
+        "audio/webm;codecs=opus",
+        "audio/webm"
+      ];
 
-  for (const type of types) {
-    if (MediaRecorder.isTypeSupported(type)) {
-      statusText.textContent = `Bruger lydformat: ${type}`;
-      return { mimeType: type };
+      for (const type of supportedTypes) {
+        if (MediaRecorder.isTypeSupported(type)) {
+          return { mimeType: type };
+        }
+      }
+
+      return {};
     }
-  }
-
-  statusText.textContent = "Bruger browserens standard lydformat.";
-  return {};
-}
 
     function formatTime(seconds) {
       const m = String(Math.floor(seconds / 60)).padStart(2, "0");
@@ -580,8 +558,6 @@ function getRecorderOptions() {
 
       selectedEmoji = item?.emoji || "🙂";
       selectedEmojiLabel = item?.emojiLabel || "Almindelig";
-      bpmSlider.value = item?.bpm || 90;
-      bpmValue.textContent = bpmSlider.value;
       dayNote.value = item?.note || "";
 
       updateEmojiUI();
@@ -594,7 +570,6 @@ function getRecorderOptions() {
 
       item.emoji = selectedEmoji;
       item.emojiLabel = selectedEmojiLabel;
-      item.bpm = Number(bpmSlider.value);
       item.note = dayNote.value;
 
       await saveItem(item);
@@ -603,10 +578,28 @@ function getRecorderOptions() {
       statusText.textContent = `Dag ${day} karakter er gemt.`;
     }
 
+    async function saveAudioForSelectedDay(blob, mimeType) {
+      const day = Number(daySelect.value);
+      const existing = await getItem(day);
+      const item = existing || makeDefaultItem(day);
+
+      item.blob = blob;
+      item.mimeType = mimeType || blob.type || "";
+      item.createdAt = item.createdAt || new Date().toISOString();
+      item.emoji = selectedEmoji;
+      item.emojiLabel = selectedEmojiLabel;
+      item.note = dayNote.value;
+
+      await saveItem(item);
+      await renderDays();
+
+      statusText.textContent = `Dag ${day} er gemt.`;
+    }
+
     async function startRecording() {
       try {
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-          statusText.textContent = "Denne browser understøtter ikke optagelse.";
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder) {
+          statusText.textContent = "Denne browser understøtter ikke direkte optagelse. Brug upload-feltet.";
           return;
         }
 
@@ -615,8 +608,6 @@ function getRecorderOptions() {
 
         chunks = [];
         mediaRecorder = new MediaRecorder(stream, options);
-        console.log("MediaRecorder mimeType:", mediaRecorder.mimeType);
-statusText.textContent = `Optageformat: ${mediaRecorder.mimeType || "standard"}`;
 
         mediaRecorder.ondataavailable = event => {
           if (event.data && event.data.size > 0) {
@@ -630,26 +621,11 @@ statusText.textContent = `Optageformat: ${mediaRecorder.mimeType || "standard"}`
             const blob = new Blob(chunks, { type: mimeType });
 
             if (blob.size === 0) {
-              statusText.textContent = "Optagelsen var tom. Prøv igen.";
+              statusText.textContent = "Optagelsen var tom. Prøv igen eller brug upload.";
               return;
             }
 
-            const day = Number(daySelect.value);
-            const existing = await getItem(day);
-            const item = existing || makeDefaultItem(day);
-
-            item.blob = blob;
-            item.mimeType = mimeType;
-            item.createdAt = item.createdAt || new Date().toISOString();
-            item.emoji = selectedEmoji;
-            item.emojiLabel = selectedEmojiLabel;
-            item.bpm = Number(bpmSlider.value);
-            item.note = dayNote.value;
-
-            await saveItem(item);
-
-            statusText.textContent = `Dag ${day} er gemt.`;
-            await renderDays();
+            await saveAudioForSelectedDay(blob, mimeType);
           } catch (error) {
             console.error(error);
             statusText.textContent = "Der skete en fejl, da optagelsen skulle gemmes.";
@@ -663,7 +639,7 @@ statusText.textContent = `Optageformat: ${mediaRecorder.mimeType || "standard"}`
 
         recordBtn.disabled = true;
         stopBtn.disabled = false;
-        statusText.textContent = "Optager...";
+        statusText.textContent = `Optager... Format: ${mediaRecorder.mimeType || "standard"}`;
 
         recordingTimer = setInterval(() => {
           recordingSeconds++;
@@ -677,7 +653,7 @@ statusText.textContent = `Optageformat: ${mediaRecorder.mimeType || "standard"}`
 
       } catch (error) {
         console.error(error);
-        statusText.textContent = "Mikrofonadgang blev afvist eller er ikke understøttet.";
+        statusText.textContent = "Mikrofonadgang blev afvist eller virker ikke i denne browser. Brug upload-feltet.";
         resetRecorderUI();
       }
     }
@@ -688,6 +664,21 @@ statusText.textContent = `Optageformat: ${mediaRecorder.mimeType || "standard"}`
       if (mediaRecorder && mediaRecorder.state !== "inactive") {
         mediaRecorder.stop();
       }
+    }
+
+    async function handleFileUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      if (!file.type.startsWith("audio/")) {
+        statusText.textContent = "Vælg venligst en lydfil.";
+        fileInput.value = "";
+        return;
+      }
+
+      await saveAudioForSelectedDay(file, file.type);
+
+      fileInput.value = "";
     }
 
     async function renderDays() {
@@ -724,12 +715,7 @@ statusText.textContent = `Optageformat: ${mediaRecorder.mimeType || "standard"}`
           emojiPill.className = "pill";
           emojiPill.textContent = `${item.emoji || "🙂"} ${item.emojiLabel || "Almindelig"}`;
 
-          const bpmPill = document.createElement("span");
-          bpmPill.className = "pill";
-          bpmPill.textContent = `${item.bpm || 90} BPM`;
-
           meta.appendChild(emojiPill);
-          meta.appendChild(bpmPill);
           dayEl.appendChild(meta);
         }
 
@@ -836,7 +822,7 @@ statusText.textContent = `Optageformat: ${mediaRecorder.mimeType || "standard"}`
       for (const item of recordings) {
         if (!weekPlaying) break;
 
-        statusText.textContent = `Afspiller dag ${item.day}: ${item.emoji || "🙂"} ${item.bpm || 90} BPM`;
+        statusText.textContent = `Afspiller dag ${item.day}: ${item.emoji || "🙂"} ${item.emojiLabel || ""}`;
 
         await playOneRecording(item);
 
@@ -878,12 +864,9 @@ statusText.textContent = `Optageformat: ${mediaRecorder.mimeType || "standard"}`
     playWeekBtn.addEventListener("click", playWeekComposition);
     stopWeekBtn.addEventListener("click", stopWeekComposition);
     saveCharacterBtn.addEventListener("click", saveSelectedDayCharacter);
+    fileInput.addEventListener("change", handleFileUpload);
 
     daySelect.addEventListener("change", loadSelectedDayCharacter);
-
-    bpmSlider.addEventListener("input", () => {
-      bpmValue.textContent = bpmSlider.value;
-    });
 
     emojiGrid.addEventListener("click", event => {
       const button = event.target.closest(".emoji-option");
@@ -908,13 +891,12 @@ statusText.textContent = `Optageformat: ${mediaRecorder.mimeType || "standard"}`
     });
 
     async function init() {
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder) {
-        statusText.textContent = "Denne browser understøtter ikke optagelse.";
-        recordBtn.disabled = true;
-        return;
-      }
-
       db = await openDB();
+
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder) {
+        statusText.textContent = "Direkte optagelse understøttes muligvis ikke. Brug upload-feltet.";
+        recordBtn.disabled = true;
+      }
 
       if (navigator.storage && navigator.storage.persist) {
         try {
