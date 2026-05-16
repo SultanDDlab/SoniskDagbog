@@ -397,11 +397,14 @@
     let chunks = [];
     let recordingTimer = null;
     let recordingSeconds = 0;
-    let currentAudio = null;
-    let currentObjectUrl = null;
     let weekPlaying = false;
     let selectedEmoji = "🙂";
     let selectedEmojiLabel = "Almindelig";
+
+    // Single persistent audio element reused across all playback — Safari handles
+    // this far better than creating new Audio() objects for each track.
+    const sharedAudio = new Audio();
+    let currentObjectUrl = null;
 
     const recordBtn = document.getElementById("recordBtn");
     const stopBtn = document.getElementById("stopBtn");
@@ -451,10 +454,8 @@
       return new Promise((resolve, reject) => {
         const tx = db.transaction(STORE_NAME, "readwrite");
         const store = tx.objectStore(STORE_NAME);
-
         item.updatedAt = new Date().toISOString();
         store.put(item);
-
         tx.oncomplete = resolve;
         tx.onerror = () => reject(tx.error);
       });
@@ -465,7 +466,6 @@
         const tx = db.transaction(STORE_NAME, "readonly");
         const store = tx.objectStore(STORE_NAME);
         const request = store.get(Number(day));
-
         request.onsuccess = () => resolve(request.result || null);
         request.onerror = () => reject(request.error);
       });
@@ -476,11 +476,9 @@
         const tx = db.transaction(STORE_NAME, "readonly");
         const store = tx.objectStore(STORE_NAME);
         const request = store.getAll();
-
         request.onsuccess = () => {
           resolve(request.result.sort((a, b) => a.day - b.day));
         };
-
         request.onerror = () => reject(request.error);
       });
     }
@@ -490,7 +488,6 @@
         const tx = db.transaction(STORE_NAME, "readwrite");
         const store = tx.objectStore(STORE_NAME);
         store.delete(Number(day));
-
         tx.oncomplete = resolve;
         tx.onerror = () => reject(tx.error);
       });
@@ -501,7 +498,6 @@
         const tx = db.transaction(STORE_NAME, "readwrite");
         const store = tx.objectStore(STORE_NAME);
         store.clear();
-
         tx.oncomplete = resolve;
         tx.onerror = () => reject(tx.error);
       });
@@ -511,7 +507,6 @@
       if (!window.MediaRecorder || !MediaRecorder.isTypeSupported) {
         return {};
       }
-
       const supportedTypes = [
         "audio/mp4",
         "audio/mp4;codecs=mp4a.40.2",
@@ -519,13 +514,11 @@
         "audio/webm;codecs=opus",
         "audio/webm"
       ];
-
       for (const type of supportedTypes) {
         if (MediaRecorder.isTypeSupported(type)) {
           return { mimeType: type };
         }
       }
-
       return {};
     }
 
@@ -544,22 +537,17 @@
     }
 
     function updateEmojiUI() {
-      const buttons = document.querySelectorAll(".emoji-option");
-
-      buttons.forEach(button => {
-        const isActive = button.dataset.emoji === selectedEmoji;
-        button.classList.toggle("active", isActive);
+      document.querySelectorAll(".emoji-option").forEach(button => {
+        button.classList.toggle("active", button.dataset.emoji === selectedEmoji);
       });
     }
 
     async function loadSelectedDayCharacter() {
       const day = Number(daySelect.value);
       const item = await getItem(day);
-
       selectedEmoji = item?.emoji || "🙂";
       selectedEmojiLabel = item?.emojiLabel || "Almindelig";
       dayNote.value = item?.note || "";
-
       updateEmojiUI();
     }
 
@@ -567,14 +555,11 @@
       const day = Number(daySelect.value);
       const existing = await getItem(day);
       const item = existing || makeDefaultItem(day);
-
       item.emoji = selectedEmoji;
       item.emojiLabel = selectedEmojiLabel;
       item.note = dayNote.value;
-
       await saveItem(item);
       await renderDays();
-
       statusText.textContent = `Dag ${day} karakter er gemt.`;
     }
 
@@ -582,17 +567,14 @@
       const day = Number(daySelect.value);
       const existing = await getItem(day);
       const item = existing || makeDefaultItem(day);
-
       item.blob = blob;
       item.mimeType = mimeType || blob.type || "";
       item.createdAt = item.createdAt || new Date().toISOString();
       item.emoji = selectedEmoji;
       item.emojiLabel = selectedEmojiLabel;
       item.note = dayNote.value;
-
       await saveItem(item);
       await renderDays();
-
       statusText.textContent = `Dag ${day} er gemt.`;
     }
 
@@ -605,7 +587,6 @@
 
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         const options = getRecorderOptions();
-
         chunks = [];
         mediaRecorder = new MediaRecorder(stream, options);
 
@@ -619,12 +600,10 @@
           try {
             const mimeType = mediaRecorder.mimeType || options.mimeType || "";
             const blob = new Blob(chunks, { type: mimeType });
-
             if (blob.size === 0) {
               statusText.textContent = "Optagelsen var tom. Prøv igen eller brug upload.";
               return;
             }
-
             await saveAudioForSelectedDay(blob, mimeType);
           } catch (error) {
             console.error(error);
@@ -636,7 +615,6 @@
         };
 
         mediaRecorder.start(1000);
-
         recordBtn.disabled = true;
         stopBtn.disabled = false;
         statusText.textContent = `Optager... Format: ${mediaRecorder.mimeType || "standard"}`;
@@ -645,7 +623,6 @@
           recordingSeconds++;
           timer.textContent = formatTime(recordingSeconds);
           progress.style.width = `${(recordingSeconds / MAX_SECONDS) * 100}%`;
-
           if (recordingSeconds >= MAX_SECONDS) {
             stopRecording();
           }
@@ -660,7 +637,6 @@
 
     function stopRecording() {
       clearInterval(recordingTimer);
-
       if (mediaRecorder && mediaRecorder.state !== "inactive") {
         mediaRecorder.stop();
       }
@@ -669,15 +645,12 @@
     async function handleFileUpload(event) {
       const file = event.target.files[0];
       if (!file) return;
-
       if (!file.type.startsWith("audio/")) {
         statusText.textContent = "Vælg venligst en lydfil.";
         fileInput.value = "";
         return;
       }
-
       await saveAudioForSelectedDay(file, file.type);
-
       fileInput.value = "";
     }
 
@@ -710,11 +683,9 @@
         if (hasCharacter) {
           const meta = document.createElement("div");
           meta.className = "meta-row";
-
           const emojiPill = document.createElement("span");
           emojiPill.className = "pill";
           emojiPill.textContent = `${item.emoji || "🙂"} ${item.emojiLabel || "Almindelig"}`;
-
           meta.appendChild(emojiPill);
           dayEl.appendChild(meta);
         }
@@ -753,7 +724,6 @@
         deleteBtn.onclick = async () => {
           await deleteItem(day);
           await renderDays();
-
           if (Number(daySelect.value) === day) {
             await loadSelectedDayCharacter();
           }
@@ -762,47 +732,61 @@
         actions.appendChild(editBtn);
         actions.appendChild(deleteBtn);
         dayEl.appendChild(actions);
-
         daysContainer.appendChild(dayEl);
       }
     }
 
-    async function playOneRecording(item) {
+    // Safari iOS fix: reuse sharedAudio element, wait for canplaythrough before
+    // calling play(), and revoke the previous object URL only after the new src
+    // is assigned so Safari doesn't lose the reference mid-transition.
+    function playOneRecording(item) {
       return new Promise(resolve => {
+        const previousUrl = currentObjectUrl;
         currentObjectUrl = URL.createObjectURL(item.blob);
-        currentAudio = new Audio();
 
         let resolved = false;
-
         const finish = () => {
           if (resolved) return;
           resolved = true;
-
-          if (currentAudio) {
-            currentAudio.pause();
-            currentAudio.src = "";
-            currentAudio.load();
-          }
-
+          sharedAudio.pause();
+          // Revoke the URL we just finished playing, not the next one.
           if (currentObjectUrl) {
             URL.revokeObjectURL(currentObjectUrl);
+            currentObjectUrl = null;
           }
-
-          currentAudio = null;
-          currentObjectUrl = null;
           resolve();
         };
 
-        currentAudio.src = currentObjectUrl;
-        currentAudio.preload = "auto";
-        currentAudio.onended = finish;
-        currentAudio.onerror = finish;
+        // Revoke previous URL now that the new one is ready.
+        if (previousUrl) {
+          URL.revokeObjectURL(previousUrl);
+        }
 
-        currentAudio.play().catch(error => {
-          console.error(`Kunne ikke afspille dag ${item.day}:`, error);
+        sharedAudio.onended = finish;
+        sharedAudio.onerror = () => {
+          console.error(`Playback error dag ${item.day}:`, sharedAudio.error);
           statusText.textContent = `Kunne ikke afspille dag ${item.day}. Springer videre.`;
           finish();
-        });
+        };
+
+        // Remove any previous canplaythrough listener before adding a new one.
+        sharedAudio.oncanplaythrough = null;
+
+        sharedAudio.src = currentObjectUrl;
+        sharedAudio.load();
+
+        sharedAudio.oncanplaythrough = () => {
+          sharedAudio.oncanplaythrough = null;
+          if (!weekPlaying) {
+            finish();
+            return;
+          }
+          sharedAudio.play().catch(err => {
+            console.error(`play() rejected dag ${item.day}:`, err);
+            statusText.textContent = `Kunne ikke afspille dag ${item.day}. Springer videre.`;
+            finish();
+          });
+        };
       });
     }
 
@@ -832,8 +816,6 @@
       }
 
       weekPlaying = false;
-      currentAudio = null;
-      currentObjectUrl = null;
       playWeekBtn.disabled = false;
       stopWeekBtn.disabled = true;
       statusText.textContent = "Ugekompositionen er færdig.";
@@ -841,19 +823,13 @@
 
     function stopWeekComposition() {
       weekPlaying = false;
-
-      if (currentAudio) {
-        currentAudio.pause();
-        currentAudio.src = "";
-        currentAudio.load();
-      }
-
+      sharedAudio.pause();
+      sharedAudio.src = "";
+      sharedAudio.load();
       if (currentObjectUrl) {
         URL.revokeObjectURL(currentObjectUrl);
+        currentObjectUrl = null;
       }
-
-      currentAudio = null;
-      currentObjectUrl = null;
       playWeekBtn.disabled = false;
       stopWeekBtn.disabled = true;
       statusText.textContent = "Ugekompositionen er stoppet.";
@@ -865,28 +841,23 @@
     stopWeekBtn.addEventListener("click", stopWeekComposition);
     saveCharacterBtn.addEventListener("click", saveSelectedDayCharacter);
     fileInput.addEventListener("change", handleFileUpload);
-
     daySelect.addEventListener("change", loadSelectedDayCharacter);
 
     emojiGrid.addEventListener("click", event => {
       const button = event.target.closest(".emoji-option");
       if (!button) return;
-
       selectedEmoji = button.dataset.emoji;
       selectedEmojiLabel = button.dataset.label;
-
       updateEmojiUI();
     });
 
     clearAllBtn.addEventListener("click", async () => {
       const confirmed = confirm("Vil du slette alle syv dage?");
       if (!confirmed) return;
-
       await clearAllItems();
       stopWeekComposition();
       await renderDays();
       await loadSelectedDayCharacter();
-
       statusText.textContent = "Alle dage er slettet.";
     });
 
