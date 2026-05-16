@@ -1144,6 +1144,37 @@
       ctx.closePath();
     }
 
+    function drawWrappedText(ctx, text, x, startY, maxWidth, lineHeight, maxBottomY) {
+  const words = (text || "").split(/\s+/).filter(Boolean);
+  let line = "";
+  let y = startY;
+
+  for (let i = 0; i < words.length; i++) {
+    const testLine = line ? `${line} ${words[i]}` : words[i];
+
+    if (ctx.measureText(testLine).width > maxWidth && line) {
+      if (y + lineHeight > maxBottomY) {
+        ctx.fillText("...", x, y);
+        return;
+      }
+
+      ctx.fillText(line, x, y);
+      line = words[i];
+      y += lineHeight;
+    } else {
+      line = testLine;
+    }
+  }
+
+  if (line) {
+    if (y <= maxBottomY) {
+      ctx.fillText(line, x, y);
+    } else {
+      ctx.fillText("...", x, maxBottomY);
+    }
+  }
+}
+    
 async function exportImage() {
   const items = await getAllItems();
 
@@ -1163,9 +1194,16 @@ async function exportImage() {
     const W = 840 * SCALE;
     const PAD = 32 * SCALE;
     const COL = 7;
+    const GAP_Y = 12 * SCALE;
+
     const colW = (W - PAD * 2) / COL;
+
     const HEADER_H = 90 * SCALE;
-    const DAY_H = 190 * SCALE;
+
+    const TOP_BOX_H = 150 * SCALE;
+    const NOTE_BOX_H = 260 * SCALE;
+    const DAY_H = TOP_BOX_H + GAP_Y + NOTE_BOX_H;
+
     const H = HEADER_H + DAY_H + PAD;
 
     const canvas = document.createElement("canvas");
@@ -1197,77 +1235,87 @@ async function exportImage() {
     for (let i = 0; i < 7; i++) {
       const x = PAD + i * colW;
       const y = HEADER_H;
+
       const item = items.find(it => it.day === i + 1) || null;
 
-      ctx.fillStyle = item ? theme.card : theme.emptyBg;
-      roundRect(ctx, x + 4 * SCALE, y, colW - 8 * SCALE, DAY_H - 8 * SCALE, 16 * SCALE);
+      const boxX = x + 4 * SCALE;
+      const boxW = colW - 8 * SCALE;
+
+      const topY = y;
+      const noteY = y + TOP_BOX_H + GAP_Y;
+
+      const fillColor = item ? theme.card : theme.emptyBg;
+
+      // Top box
+      ctx.fillStyle = fillColor;
+      roundRect(ctx, boxX, topY, boxW, TOP_BOX_H, 16 * SCALE);
       ctx.fill();
 
       ctx.strokeStyle = theme.border;
       ctx.lineWidth = 1 * SCALE;
-      roundRect(ctx, x + 4 * SCALE, y, colW - 8 * SCALE, DAY_H - 8 * SCALE, 16 * SCALE);
+      roundRect(ctx, boxX, topY, boxW, TOP_BOX_H, 16 * SCALE);
       ctx.stroke();
+
+      // Note box
+      ctx.fillStyle = fillColor;
+      roundRect(ctx, boxX, noteY, boxW, NOTE_BOX_H, 16 * SCALE);
+      ctx.fill();
+
+      ctx.strokeStyle = theme.border;
+      ctx.lineWidth = 1 * SCALE;
+      roundRect(ctx, boxX, noteY, boxW, NOTE_BOX_H, 16 * SCALE);
+      ctx.stroke();
+
+      // Top box content
+      ctx.textAlign = "center";
 
       ctx.fillStyle = theme.muted;
       ctx.font = `bold ${12 * SCALE}px system-ui, sans-serif`;
-      ctx.textAlign = "center";
-      ctx.fillText(`Dag ${i + 1}`, x + colW / 2, y + 22 * SCALE);
+      ctx.fillText(`Dag ${i + 1}`, x + colW / 2, topY + 22 * SCALE);
+
+      if (item?.recordingDate) {
+        ctx.fillStyle = theme.muted;
+        ctx.font = `${10 * SCALE}px system-ui, sans-serif`;
+        ctx.fillText(formatDisplayDate(item.recordingDate), x + colW / 2, topY + 42 * SCALE);
+      }
 
       if (item) {
-        if (item.recordingDate) {
-          ctx.fillStyle = theme.muted;
-          ctx.font = `${10 * SCALE}px system-ui, sans-serif`;
-          ctx.fillText(formatDisplayDate(item.recordingDate), x + colW / 2, y + 38 * SCALE);
-        }
-
-        ctx.font = `${44 * SCALE}px serif`;
-        ctx.fillText(item.emoji || "🙂", x + colW / 2, y + 84 * SCALE);
+        ctx.font = `${42 * SCALE}px serif`;
+        ctx.fillText(item.emoji || "🙂", x + colW / 2, topY + 86 * SCALE);
 
         ctx.fillStyle = theme.text;
         ctx.font = `bold ${11 * SCALE}px system-ui, sans-serif`;
-        ctx.fillText(item.emojiLabel || "", x + colW / 2, y + 106 * SCALE);
-
-        if (item.note) {
-          ctx.fillStyle = theme.muted;
-          ctx.font = `${10 * SCALE}px system-ui, sans-serif`;
-
-          const maxW = colW - 16 * SCALE;
-          const words = item.note.split(" ");
-          let line = "";
-          let lineY = y + 124 * SCALE;
-
-          for (const word of words) {
-            const test = line ? line + " " + word : word;
-
-            if (ctx.measureText(test).width > maxW && line) {
-              ctx.fillText(line, x + colW / 2, lineY);
-              line = word;
-              lineY += 13 * SCALE;
-
-              if (lineY > y + DAY_H - 24 * SCALE) {
-                ctx.fillText("...", x + colW / 2, lineY);
-                break;
-              }
-            } else {
-              line = test;
-            }
-          }
-
-          if (line && lineY <= y + DAY_H - 24 * SCALE) {
-            ctx.fillText(line, x + colW / 2, lineY);
-          }
-        }
-
-        if (item.blob) {
-          ctx.fillStyle = theme.recordingDot;
-          ctx.beginPath();
-          ctx.arc(x + colW / 2, y + DAY_H - 20 * SCALE, 4 * SCALE, 0, Math.PI * 2);
-          ctx.fill();
-        }
+        ctx.fillText(item.emojiLabel || "", x + colW / 2, topY + 112 * SCALE);
       } else {
         ctx.fillStyle = theme.emptySymbol;
-        ctx.font = `${32 * SCALE}px serif`;
-        ctx.fillText("-", x + colW / 2, y + 82 * SCALE);
+        ctx.font = `${28 * SCALE}px serif`;
+        ctx.fillText("-", x + colW / 2, topY + 88 * SCALE);
+      }
+
+      // Note box content
+      ctx.textAlign = "left";
+
+      ctx.fillStyle = theme.muted;
+      ctx.font = `bold ${11 * SCALE}px system-ui, sans-serif`;
+      ctx.fillText("Note", boxX + 12 * SCALE, noteY + 20 * SCALE);
+
+      if (item?.note) {
+        ctx.fillStyle = theme.text;
+        ctx.font = `${10 * SCALE}px system-ui, sans-serif`;
+
+        drawWrappedText(
+          ctx,
+          item.note,
+          boxX + 12 * SCALE,
+          noteY + 42 * SCALE,
+          boxW - 24 * SCALE,
+          14 * SCALE,
+          noteY + NOTE_BOX_H - 18 * SCALE
+        );
+      } else {
+        ctx.fillStyle = theme.muted;
+        ctx.font = `${10 * SCALE}px system-ui, sans-serif`;
+        ctx.fillText("Ingen note", boxX + 12 * SCALE, noteY + 42 * SCALE);
       }
     }
 
