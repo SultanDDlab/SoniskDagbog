@@ -13,23 +13,38 @@
       --muted: #6d6d6d;
       --border: #ddd6ca;
       --accent: #1f4f46;
+      --accent-text: #ffffff;
       --danger: #8f2f2f;
+      --danger-bg: #f3dddd;
       --soft: #ece6dc;
+      --input-bg: #fffdf9;
+      --empty-bg: #ece6dc;
+      --empty-symbol: #bbbbbb;
+      --footer: #aaaaaa;
+      --recording-dot: #1f4f46;
       --shadow: rgba(0,0,0,0.05);
     }
-      @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #151515;
-      --card: #222222;
-      --text: #f2f2f2;
-      --muted: #b8b8b8;
-      --border: #3a3a3a;
-      --accent: #7ab8a8;
-      --danger: #ff9b9b;
-      --soft: #303030;
-      --shadow: rgba(0,0,0,0.35);
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #151515;
+        --card: #222222;
+        --text: #f2f2f2;
+        --muted: #b8b8b8;
+        --border: #3a3a3a;
+        --accent: #7ab8a8;
+        --accent-text: #111111;
+        --danger: #ff9b9b;
+        --danger-bg: #3a2424;
+        --soft: #303030;
+        --input-bg: #2a2a2a;
+        --empty-bg: #252525;
+        --empty-symbol: #777777;
+        --footer: #777777;
+        --recording-dot: #7ab8a8;
+        --shadow: rgba(0,0,0,0.35);
+      }
     }
-  }
 
     * { box-sizing: border-box; }
 
@@ -49,19 +64,24 @@
       padding-bottom: 42px;
     }
 
-    header { padding-top: 14px; margin-bottom: 18px; }
+    header {
+      padding-top: 14px;
+      margin-bottom: 18px;
+    }
 
     h1 {
       font-size: 2.05rem;
       line-height: 1.05;
       margin: 0 0 8px;
       letter-spacing: -0.04em;
+      color: var(--text);
     }
 
     h2 {
       margin-top: 0;
       font-size: 1.25rem;
       letter-spacing: -0.02em;
+      color: var(--text);
     }
 
     label {
@@ -69,6 +89,7 @@
       font-size: 0.92rem;
       font-weight: 700;
       margin-bottom: 8px;
+      color: var(--text);
     }
 
     .subtitle {
@@ -94,16 +115,21 @@
       line-height: 1.4;
     }
 
-    select, textarea, input[type="file"], input[type="date"] {
+    select,
+    textarea,
+    input[type="file"],
+    input[type="date"] {
       width: 100%;
       font: inherit;
+      color: var(--text);
     }
 
-    select, input[type="date"] {
+    select,
+    input[type="date"] {
       padding: 14px;
       border-radius: 14px;
       border: 1px solid var(--border);
-      background: #fffdf9;
+      background: var(--input-bg);
       color: var(--text);
       margin-bottom: 14px;
     }
@@ -112,8 +138,6 @@
       display: block;
       height: 52px;
       line-height: normal;
-      appearance: none;
-      -webkit-appearance: none;
     }
 
     textarea {
@@ -122,15 +146,19 @@
       padding: 12px;
       resize: vertical;
       min-height: 58px;
-      background: #fffdf9;
+      background: var(--input-bg);
       color: var(--text);
+    }
+
+    textarea::placeholder {
+      color: var(--muted);
     }
 
     input[type="file"] {
       border: 1px solid var(--border);
       border-radius: 14px;
       padding: 12px;
-      background: #fffdf9;
+      background: var(--input-bg);
       color: var(--text);
     }
 
@@ -140,6 +168,7 @@
       letter-spacing: -0.06em;
       margin: 8px 0;
       text-align: center;
+      color: var(--text);
     }
 
     .progress-wrap {
@@ -176,11 +205,25 @@
       touch-action: manipulation;
     }
 
-    button:disabled { opacity: 0.45; cursor: not-allowed; }
+    button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
 
-    .primary { background: var(--accent); color: white; }
-    .secondary { background: var(--soft); color: var(--text); }
-    .danger { background: #f3dddd; color: var(--danger); }
+    .primary {
+      background: var(--accent);
+      color: var(--accent-text);
+    }
+
+    .secondary {
+      background: var(--soft);
+      color: var(--text);
+    }
+
+    .danger {
+      background: var(--danger-bg);
+      color: var(--danger);
+    }
 
     .small-btn {
       min-height: 42px;
@@ -198,7 +241,8 @@
 
     .emoji-option {
       border: 1px solid var(--border);
-      background: #fffdf9;
+      background: var(--input-bg);
+      color: var(--text);
       border-radius: 14px;
       min-height: 50px;
       font-size: 1.25rem;
@@ -218,11 +262,14 @@
       text-align: center;
     }
 
-    .days { display: grid; gap: 10px; }
+    .days {
+      display: grid;
+      gap: 10px;
+    }
 
     .day {
       border: 1px solid var(--border);
-      background: #fff;
+      background: var(--card);
       border-radius: 20px;
       padding: 14px;
     }
@@ -235,7 +282,10 @@
       margin-bottom: 10px;
     }
 
-    .day-title { font-weight: 800; }
+    .day-title {
+      font-weight: 800;
+      color: var(--text);
+    }
 
     .day-state {
       font-size: 0.82rem;
@@ -274,13 +324,25 @@
       line-height: 1.45;
     }
 
-    audio { width: 100%; margin-top: 8px; }
+    audio {
+      width: 100%;
+      margin-top: 8px;
+    }
 
-    .divider { height: 1px; background: var(--border); margin: 16px 0; }
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 16px 0;
+    }
 
     @media (min-width: 480px) {
-      .button-row { grid-template-columns: 1fr 1fr; }
-      h1 { font-size: 2.35rem; }
+      .button-row {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      h1 {
+        font-size: 2.35rem;
+      }
     }
   </style>
 </head>
@@ -427,6 +489,28 @@
       });
     }
 
+    function getThemeColor(variableName) {
+      return getComputedStyle(document.documentElement)
+        .getPropertyValue(variableName)
+        .trim();
+    }
+
+    function getThemeColors() {
+      return {
+        bg: getThemeColor("--bg"),
+        card: getThemeColor("--card"),
+        text: getThemeColor("--text"),
+        muted: getThemeColor("--muted"),
+        border: getThemeColor("--border"),
+        accent: getThemeColor("--accent"),
+        soft: getThemeColor("--soft"),
+        emptyBg: getThemeColor("--empty-bg"),
+        emptySymbol: getThemeColor("--empty-symbol"),
+        footer: getThemeColor("--footer"),
+        recordingDot: getThemeColor("--recording-dot")
+      };
+    }
+
     function unlockAudio() {
       if (audioUnlocked) return;
       audioUnlocked = true;
@@ -468,12 +552,14 @@
     function openDB() {
       return new Promise((resolve, reject) => {
         const request = indexedDB.open(DB_NAME, 1);
+
         request.onupgradeneeded = event => {
           const database = event.target.result;
           if (!database.objectStoreNames.contains(STORE_NAME)) {
             database.createObjectStore(STORE_NAME, { keyPath: "day" });
           }
         };
+
         request.onsuccess = event => resolve(event.target.result);
         request.onerror = () => reject(request.error);
       });
@@ -497,8 +583,10 @@
       return new Promise((resolve, reject) => {
         const tx = db.transaction(STORE_NAME, "readwrite");
         const store = tx.objectStore(STORE_NAME);
+
         item.updatedAt = new Date().toISOString();
         store.put(item);
+
         tx.oncomplete = resolve;
         tx.onerror = () => reject(tx.error);
       });
@@ -509,6 +597,7 @@
         const tx = db.transaction(STORE_NAME, "readonly");
         const store = tx.objectStore(STORE_NAME);
         const request = store.get(Number(day));
+
         request.onsuccess = () => resolve(request.result || null);
         request.onerror = () => reject(request.error);
       });
@@ -519,6 +608,7 @@
         const tx = db.transaction(STORE_NAME, "readonly");
         const store = tx.objectStore(STORE_NAME);
         const request = store.getAll();
+
         request.onsuccess = () => resolve(request.result.sort((a, b) => a.day - b.day));
         request.onerror = () => reject(request.error);
       });
@@ -528,7 +618,9 @@
       return new Promise((resolve, reject) => {
         const tx = db.transaction(STORE_NAME, "readwrite");
         const store = tx.objectStore(STORE_NAME);
+
         store.delete(Number(day));
+
         tx.oncomplete = resolve;
         tx.onerror = () => reject(tx.error);
       });
@@ -538,7 +630,9 @@
       return new Promise((resolve, reject) => {
         const tx = db.transaction(STORE_NAME, "readwrite");
         const store = tx.objectStore(STORE_NAME);
+
         store.clear();
+
         tx.oncomplete = resolve;
         tx.onerror = () => reject(tx.error);
       });
@@ -546,6 +640,7 @@
 
     function getRecorderOptions() {
       if (!window.MediaRecorder || !MediaRecorder.isTypeSupported) return {};
+
       const types = [
         "audio/mp4",
         "audio/mp4;codecs=mp4a.40.2",
@@ -553,9 +648,11 @@
         "audio/webm;codecs=opus",
         "audio/webm"
       ];
+
       for (const type of types) {
         if (MediaRecorder.isTypeSupported(type)) return { mimeType: type };
       }
+
       return {};
     }
 
@@ -581,10 +678,12 @@
 
     async function loadSelectedDayCharacter() {
       const item = await getItem(Number(daySelect.value));
+
       selectedEmoji = item?.emoji || "🙂";
       selectedEmojiLabel = item?.emojiLabel || "Almindelig";
       dayNote.value = item?.note || "";
       recordingDate.value = item?.recordingDate || todayISODate();
+
       updateEmojiUI();
     }
 
@@ -600,6 +699,7 @@
 
       await saveItem(item);
       await renderDays();
+
       statusText.textContent = `Dag ${day} karakter er gemt.`;
     }
 
@@ -618,6 +718,7 @@
 
       await saveItem(item);
       await renderDays();
+
       statusText.textContent = `Dag ${day} er gemt.`;
     }
 
@@ -659,6 +760,7 @@
         };
 
         mediaRecorder.start(1000);
+
         recordBtn.disabled = true;
         stopBtn.disabled = false;
         statusText.textContent = `Optager... Format: ${mediaRecorder.mimeType || "standard"}`;
@@ -679,20 +781,28 @@
 
     function stopRecording() {
       clearInterval(recordingTimer);
-      if (mediaRecorder && mediaRecorder.state !== "inactive") mediaRecorder.stop();
+
+      if (mediaRecorder && mediaRecorder.state !== "inactive") {
+        mediaRecorder.stop();
+      }
     }
 
     async function handleFileUpload(event) {
       const file = event.target.files[0];
       if (!file) return;
 
-      if (!file.type.startsWith("audio/")) {
+      const allowedAudioExtensions = [".mp3", ".wav", ".m4a", ".aac", ".webm", ".ogg", ".mp4"];
+      const fileName = file.name.toLowerCase();
+      const hasAllowedExtension = allowedAudioExtensions.some(ext => fileName.endsWith(ext));
+      const hasAudioMimeType = file.type && file.type.startsWith("audio/");
+
+      if (!hasAudioMimeType && !hasAllowedExtension) {
         statusText.textContent = "Vælg venligst en lydfil.";
         fileInput.value = "";
         return;
       }
 
-      await saveAudioForSelectedDay(file, file.type);
+      await saveAudioForSelectedDay(file, file.type || "audio/mp4");
       fileInput.value = "";
     }
 
@@ -775,7 +885,10 @@
         deleteBtn.onclick = async () => {
           await deleteItem(day);
           await renderDays();
-          if (Number(daySelect.value) === day) await loadSelectedDayCharacter();
+
+          if (Number(daySelect.value) === day) {
+            await loadSelectedDayCharacter();
+          }
         };
 
         actions.appendChild(editBtn);
@@ -794,6 +907,7 @@
       return new Promise(resolve => {
         const previousUrl = currentObjectUrl;
         currentObjectUrl = URL.createObjectURL(item.blob);
+
         if (previousUrl) URL.revokeObjectURL(previousUrl);
 
         let resolved = false;
@@ -801,6 +915,7 @@
         const finish = () => {
           if (resolved) return;
           resolved = true;
+
           sharedAudio.pause();
 
           if (currentObjectUrl) {
@@ -860,12 +975,14 @@
         await playOneRecording(item);
 
         if (!weekPlaying) break;
+
         await new Promise(resolve => setTimeout(resolve, FIXED_PAUSE_MS));
       }
 
       weekPlaying = false;
       playWeekBtn.disabled = false;
       stopWeekBtn.disabled = true;
+
       setWeekStatus("Ugekompositionen er færdig.");
     }
 
@@ -882,6 +999,7 @@
 
       playWeekBtn.disabled = false;
       stopWeekBtn.disabled = true;
+
       setWeekStatus("Ugekompositionen er stoppet.");
     }
 
@@ -982,21 +1100,27 @@
         for (let i = 0; i < recordings.length; i++) {
           setExportStatus(`Behandler dag ${recordings[i].day}...`);
           allBuffers.push(await blobToAudioBuffer(recordings[i].blob, ctx));
-          if (i < recordings.length - 1) allBuffers.push(silence);
+
+          if (i < recordings.length - 1) {
+            allBuffers.push(silence);
+          }
         }
 
         setExportStatus("Sammensætter WAV-fil...");
+
         const wav = audioBufferToWav(concatAudioBuffers(ctx, allBuffers));
 
         await ctx.close();
 
         const url = URL.createObjectURL(wav);
         const a = document.createElement("a");
+
         a.href = url;
         a.download = "lyden-af-min-uge.wav";
         a.click();
 
         setTimeout(() => URL.revokeObjectURL(url), 5000);
+
         setExportStatus("Lydfilen er klar til download.");
       } catch (err) {
         console.error(err);
@@ -1032,6 +1156,8 @@
       exportBtn.disabled = true;
 
       try {
+        const theme = getThemeColors();
+
         const W = 840;
         const PAD = 32;
         const COL = 7;
@@ -1046,10 +1172,10 @@
 
         const ctx = canvas.getContext("2d");
 
-        ctx.fillStyle = "#f6f3ed";
+        ctx.fillStyle = theme.bg;
         ctx.fillRect(0, 0, W, H);
 
-        ctx.fillStyle = "#1e1e1e";
+        ctx.fillStyle = theme.text;
         ctx.font = "bold 28px system-ui, sans-serif";
         ctx.textAlign = "left";
         ctx.fillText("Lyden af din uge", PAD, 46);
@@ -1062,7 +1188,7 @@
           ? `${formatDisplayDate(datedItems[0].recordingDate)} - ${formatDisplayDate(datedItems[datedItems.length - 1].recordingDate)}`
           : "Ingen datoer valgt";
 
-        ctx.fillStyle = "#6d6d6d";
+        ctx.fillStyle = theme.muted;
         ctx.font = "16px system-ui, sans-serif";
         ctx.fillText(dateText, PAD, 72);
 
@@ -1071,23 +1197,23 @@
           const y = HEADER_H;
           const item = items.find(it => it.day === i + 1) || null;
 
-          ctx.fillStyle = item ? "#ffffff" : "#ece6dc";
+          ctx.fillStyle = item ? theme.card : theme.emptyBg;
           roundRect(ctx, x + 4, y, colW - 8, DAY_H - 8, 16);
           ctx.fill();
 
-          ctx.strokeStyle = "#ddd6ca";
+          ctx.strokeStyle = theme.border;
           ctx.lineWidth = 1;
           roundRect(ctx, x + 4, y, colW - 8, DAY_H - 8, 16);
           ctx.stroke();
 
-          ctx.fillStyle = "#6d6d6d";
+          ctx.fillStyle = theme.muted;
           ctx.font = "bold 12px system-ui, sans-serif";
           ctx.textAlign = "center";
           ctx.fillText(`Dag ${i + 1}`, x + colW / 2, y + 22);
 
           if (item) {
             if (item.recordingDate) {
-              ctx.fillStyle = "#6d6d6d";
+              ctx.fillStyle = theme.muted;
               ctx.font = "10px system-ui, sans-serif";
               ctx.fillText(formatDisplayDate(item.recordingDate), x + colW / 2, y + 38);
             }
@@ -1095,12 +1221,12 @@
             ctx.font = "44px serif";
             ctx.fillText(item.emoji || "🙂", x + colW / 2, y + 84);
 
-            ctx.fillStyle = "#1e1e1e";
+            ctx.fillStyle = theme.text;
             ctx.font = "bold 11px system-ui, sans-serif";
             ctx.fillText(item.emojiLabel || "", x + colW / 2, y + 106);
 
             if (item.note) {
-              ctx.fillStyle = "#6d6d6d";
+              ctx.fillStyle = theme.muted;
               ctx.font = "10px system-ui, sans-serif";
 
               const maxW = colW - 16;
@@ -1131,19 +1257,19 @@
             }
 
             if (item.blob) {
-              ctx.fillStyle = "#1f4f46";
+              ctx.fillStyle = theme.recordingDot;
               ctx.beginPath();
               ctx.arc(x + colW / 2, y + DAY_H - 20, 4, 0, Math.PI * 2);
               ctx.fill();
             }
           } else {
-            ctx.fillStyle = "#bbb";
+            ctx.fillStyle = theme.emptySymbol;
             ctx.font = "32px serif";
             ctx.fillText("-", x + colW / 2, y + 82);
           }
         }
 
-        ctx.fillStyle = "#aaa";
+        ctx.fillStyle = theme.footer;
         ctx.font = "11px system-ui, sans-serif";
         ctx.textAlign = "right";
         ctx.fillText("lyden af din uge", W - PAD, H - 10);
@@ -1192,6 +1318,7 @@
 
       selectedEmoji = button.dataset.emoji;
       selectedEmojiLabel = button.dataset.label;
+
       updateEmojiUI();
     });
 
