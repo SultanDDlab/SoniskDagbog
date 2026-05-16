@@ -20,7 +20,6 @@
       --input-bg: #fffdf9;
       --empty-bg: #ece6dc;
       --empty-symbol: #bbbbbb;
-      --footer: #aaaaaa;
       --recording-dot: #1f4f46;
       --shadow: rgba(0,0,0,0.05);
     }
@@ -508,7 +507,6 @@
         soft: getThemeColor("--soft"),
         emptyBg: getThemeColor("--empty-bg"),
         emptySymbol: getThemeColor("--empty-symbol"),
-        footer: getThemeColor("--footer"),
         recordingDot: getThemeColor("--recording-dot")
       };
     }
@@ -1146,155 +1144,152 @@
       ctx.closePath();
     }
 
-    async function exportImage() {
-      const items = await getAllItems();
+async function exportImage() {
+  const items = await getAllItems();
 
-      if (items.length === 0) {
-        setExportStatus("Ingen data at eksportere.");
-        return;
-      }
+  if (items.length === 0) {
+    setExportStatus("Ingen data at eksportere.");
+    return;
+  }
 
-      setExportStatus("Genererer billede...");
-      exportBtn.disabled = true;
+  setExportStatus("Genererer billede...");
+  exportBtn.disabled = true;
 
-      try {
-        const theme = getThemeColors();
+  try {
+    const theme = getThemeColors();
 
-        const W = 840;
-        const PAD = 32;
-        const COL = 7;
-        const colW = (W - PAD * 2) / COL;
-        const HEADER_H = 90;
-        const DAY_H = 190;
-        const H = HEADER_H + DAY_H + PAD;
+    const SCALE = 2;
 
-        const canvas = document.createElement("canvas");
-        canvas.width = W;
-        canvas.height = H;
+    const W = 840 * SCALE;
+    const PAD = 32 * SCALE;
+    const COL = 7;
+    const colW = (W - PAD * 2) / COL;
+    const HEADER_H = 90 * SCALE;
+    const DAY_H = 190 * SCALE;
+    const H = HEADER_H + DAY_H + PAD;
 
-        const ctx = canvas.getContext("2d");
+    const canvas = document.createElement("canvas");
+    canvas.width = W;
+    canvas.height = H;
 
-        ctx.fillStyle = theme.bg;
-        ctx.fillRect(0, 0, W, H);
+    const ctx = canvas.getContext("2d");
+
+    ctx.fillStyle = theme.bg;
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.fillStyle = theme.text;
+    ctx.font = `bold ${28 * SCALE}px system-ui, sans-serif`;
+    ctx.textAlign = "left";
+    ctx.fillText("Lyden af din uge", PAD, 46 * SCALE);
+
+    const datedItems = items
+      .filter(item => item.recordingDate)
+      .sort((a, b) => a.recordingDate.localeCompare(b.recordingDate));
+
+    const dateText = datedItems.length
+      ? `${formatDisplayDate(datedItems[0].recordingDate)} - ${formatDisplayDate(datedItems[datedItems.length - 1].recordingDate)}`
+      : "Ingen datoer valgt";
+
+    ctx.fillStyle = theme.muted;
+    ctx.font = `${16 * SCALE}px system-ui, sans-serif`;
+    ctx.fillText(dateText, PAD, 72 * SCALE);
+
+    for (let i = 0; i < 7; i++) {
+      const x = PAD + i * colW;
+      const y = HEADER_H;
+      const item = items.find(it => it.day === i + 1) || null;
+
+      ctx.fillStyle = item ? theme.card : theme.emptyBg;
+      roundRect(ctx, x + 4 * SCALE, y, colW - 8 * SCALE, DAY_H - 8 * SCALE, 16 * SCALE);
+      ctx.fill();
+
+      ctx.strokeStyle = theme.border;
+      ctx.lineWidth = 1 * SCALE;
+      roundRect(ctx, x + 4 * SCALE, y, colW - 8 * SCALE, DAY_H - 8 * SCALE, 16 * SCALE);
+      ctx.stroke();
+
+      ctx.fillStyle = theme.muted;
+      ctx.font = `bold ${12 * SCALE}px system-ui, sans-serif`;
+      ctx.textAlign = "center";
+      ctx.fillText(`Dag ${i + 1}`, x + colW / 2, y + 22 * SCALE);
+
+      if (item) {
+        if (item.recordingDate) {
+          ctx.fillStyle = theme.muted;
+          ctx.font = `${10 * SCALE}px system-ui, sans-serif`;
+          ctx.fillText(formatDisplayDate(item.recordingDate), x + colW / 2, y + 38 * SCALE);
+        }
+
+        ctx.font = `${44 * SCALE}px serif`;
+        ctx.fillText(item.emoji || "🙂", x + colW / 2, y + 84 * SCALE);
 
         ctx.fillStyle = theme.text;
-        ctx.font = "bold 28px system-ui, sans-serif";
-        ctx.textAlign = "left";
-        ctx.fillText("Lyden af din uge", PAD, 46);
+        ctx.font = `bold ${11 * SCALE}px system-ui, sans-serif`;
+        ctx.fillText(item.emojiLabel || "", x + colW / 2, y + 106 * SCALE);
 
-        const datedItems = items
-          .filter(item => item.recordingDate)
-          .sort((a, b) => a.recordingDate.localeCompare(b.recordingDate));
-
-        const dateText = datedItems.length
-          ? `${formatDisplayDate(datedItems[0].recordingDate)} - ${formatDisplayDate(datedItems[datedItems.length - 1].recordingDate)}`
-          : "Ingen datoer valgt";
-
-        ctx.fillStyle = theme.muted;
-        ctx.font = "16px system-ui, sans-serif";
-        ctx.fillText(dateText, PAD, 72);
-
-        for (let i = 0; i < 7; i++) {
-          const x = PAD + i * colW;
-          const y = HEADER_H;
-          const item = items.find(it => it.day === i + 1) || null;
-
-          ctx.fillStyle = item ? theme.card : theme.emptyBg;
-          roundRect(ctx, x + 4, y, colW - 8, DAY_H - 8, 16);
-          ctx.fill();
-
-          ctx.strokeStyle = theme.border;
-          ctx.lineWidth = 1;
-          roundRect(ctx, x + 4, y, colW - 8, DAY_H - 8, 16);
-          ctx.stroke();
-
+        if (item.note) {
           ctx.fillStyle = theme.muted;
-          ctx.font = "bold 12px system-ui, sans-serif";
-          ctx.textAlign = "center";
-          ctx.fillText(`Dag ${i + 1}`, x + colW / 2, y + 22);
+          ctx.font = `${10 * SCALE}px system-ui, sans-serif`;
 
-          if (item) {
-            if (item.recordingDate) {
-              ctx.fillStyle = theme.muted;
-              ctx.font = "10px system-ui, sans-serif";
-              ctx.fillText(formatDisplayDate(item.recordingDate), x + colW / 2, y + 38);
-            }
+          const maxW = colW - 16 * SCALE;
+          const words = item.note.split(" ");
+          let line = "";
+          let lineY = y + 124 * SCALE;
 
-            ctx.font = "44px serif";
-            ctx.fillText(item.emoji || "🙂", x + colW / 2, y + 84);
+          for (const word of words) {
+            const test = line ? line + " " + word : word;
 
-            ctx.fillStyle = theme.text;
-            ctx.font = "bold 11px system-ui, sans-serif";
-            ctx.fillText(item.emojiLabel || "", x + colW / 2, y + 106);
+            if (ctx.measureText(test).width > maxW && line) {
+              ctx.fillText(line, x + colW / 2, lineY);
+              line = word;
+              lineY += 13 * SCALE;
 
-            if (item.note) {
-              ctx.fillStyle = theme.muted;
-              ctx.font = "10px system-ui, sans-serif";
-
-              const maxW = colW - 16;
-              const words = item.note.split(" ");
-              let line = "";
-              let lineY = y + 124;
-
-              for (const word of words) {
-                const test = line ? line + " " + word : word;
-
-                if (ctx.measureText(test).width > maxW && line) {
-                  ctx.fillText(line, x + colW / 2, lineY);
-                  line = word;
-                  lineY += 13;
-
-                  if (lineY > y + DAY_H - 24) {
-                    ctx.fillText("...", x + colW / 2, lineY);
-                    break;
-                  }
-                } else {
-                  line = test;
-                }
+              if (lineY > y + DAY_H - 24 * SCALE) {
+                ctx.fillText("...", x + colW / 2, lineY);
+                break;
               }
-
-              if (line && lineY <= y + DAY_H - 24) {
-                ctx.fillText(line, x + colW / 2, lineY);
-              }
+            } else {
+              line = test;
             }
+          }
 
-            if (item.blob) {
-              ctx.fillStyle = theme.recordingDot;
-              ctx.beginPath();
-              ctx.arc(x + colW / 2, y + DAY_H - 20, 4, 0, Math.PI * 2);
-              ctx.fill();
-            }
-          } else {
-            ctx.fillStyle = theme.emptySymbol;
-            ctx.font = "32px serif";
-            ctx.fillText("-", x + colW / 2, y + 82);
+          if (line && lineY <= y + DAY_H - 24 * SCALE) {
+            ctx.fillText(line, x + colW / 2, lineY);
           }
         }
 
-        ctx.fillStyle = theme.footer;
-        ctx.font = "11px system-ui, sans-serif";
-        ctx.textAlign = "right";
-        ctx.fillText("lyden af din uge", W - PAD, H - 10);
-
-        canvas.toBlob(blob => {
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-
-          a.href = url;
-          a.download = "lyden-af-min-uge.png";
-          a.click();
-
-          setTimeout(() => URL.revokeObjectURL(url), 5000);
-
-          setExportStatus("Billedet er klar til download.");
-          exportBtn.disabled = false;
-        }, "image/png");
-      } catch (err) {
-        console.error(err);
-        setExportStatus("Fejl ved eksport af billede.");
-        exportBtn.disabled = false;
+        if (item.blob) {
+          ctx.fillStyle = theme.recordingDot;
+          ctx.beginPath();
+          ctx.arc(x + colW / 2, y + DAY_H - 20 * SCALE, 4 * SCALE, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      } else {
+        ctx.fillStyle = theme.emptySymbol;
+        ctx.font = `${32 * SCALE}px serif`;
+        ctx.fillText("-", x + colW / 2, y + 82 * SCALE);
       }
     }
+
+    canvas.toBlob(blob => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+
+      a.href = url;
+      a.download = "lyden-af-min-uge.png";
+      a.click();
+
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+
+      setExportStatus("Billedet er klar til download.");
+      exportBtn.disabled = false;
+    }, "image/png");
+  } catch (err) {
+    console.error(err);
+    setExportStatus("Fejl ved eksport af billede.");
+    exportBtn.disabled = false;
+  }
+}
 
     recordBtn.addEventListener("click", startRecording);
     stopBtn.addEventListener("click", stopRecording);
