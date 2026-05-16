@@ -86,22 +86,20 @@
       font: inherit;
     }
 
-select, input[type="date"] {
-  padding: 14px;
-  border-radius: 14px;
-  border: 1px solid var(--border);
-  background: #fffdf9;
-  color: var(--text);
-  margin-bottom: 14px;
-}
+    select, input[type="date"] {
+      padding: 14px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: #fffdf9;
+      color: var(--text);
+      margin-bottom: 14px;
+    }
 
-input[type="date"] {
-  display: block;
-  height: 52px;
-  line-height: normal;
-  appearance: none;
-  -webkit-appearance: none;
-}
+    input[type="date"] {
+      display: block;
+      height: 52px;
+      line-height: normal;
+    }
 
     textarea {
       border: 1px solid var(--border);
@@ -180,7 +178,7 @@ input[type="date"] {
       display: grid;
       grid-template-columns: repeat(6, 1fr);
       gap: 6px;
-      margin-bottom: 16px;
+      margin-bottom: 8px;
     }
 
     .emoji-option {
@@ -195,6 +193,14 @@ input[type="date"] {
     .emoji-option.active {
       border: 2px solid var(--accent);
       background: var(--soft);
+    }
+
+    .selected-emoji-label {
+      margin: 0 0 16px;
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-align: center;
     }
 
     .days { display: grid; gap: 10px; }
@@ -322,8 +328,8 @@ input[type="date"] {
       </div>
 
       <p class="selected-emoji-label" id="selectedEmojiLabelText">
-  Valgt: Almindelig
-</p>
+        Valgt: Almindelig
+      </p>
 
       <label for="dayNote">Kort note</label>
       <textarea id="dayNote" placeholder="Hvad gjorde denne lyd til dagens lyd?"></textarea>
@@ -439,6 +445,7 @@ input[type="date"] {
     const exportStatusText = document.getElementById("exportStatusText");
     const clearAllBtn      = document.getElementById("clearAllBtn");
     const emojiGrid        = document.getElementById("emojiGrid");
+    const selectedEmojiLabelText = document.getElementById("selectedEmojiLabelText");
     const dayNote          = document.getElementById("dayNote");
     const saveCharacterBtn = document.getElementById("saveCharacterBtn");
     const fileInput        = document.getElementById("fileInput");
@@ -553,6 +560,8 @@ input[type="date"] {
       document.querySelectorAll(".emoji-option").forEach(btn => {
         btn.classList.toggle("active", btn.dataset.emoji === selectedEmoji);
       });
+
+      selectedEmojiLabelText.textContent = `Valgt: ${selectedEmojiLabel}`;
     }
 
     async function loadSelectedDayCharacter() {
