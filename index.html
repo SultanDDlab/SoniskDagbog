@@ -330,6 +330,13 @@
       margin-top: 8px;
     }
 
+.note-counter {
+  margin: 6px 2px 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+  text-align: right;
+}
+    
     .divider {
       height: 1px;
       background: var(--border);
@@ -409,8 +416,9 @@
         Almindelig
       </p>
 
-      <label for="dayNote">Kort note</label>
-      <textarea id="dayNote" placeholder="Hvad gjorde denne lyd til dagens lyd?"></textarea>
+  <label for="dayNote">Kort note</label>
+<textarea id="dayNote" placeholder="Hvad gjorde denne lyd til dagens lyd?" maxlength="300"></textarea>
+<p class="note-counter" id="noteCounter">0/300</p>
 
       <button id="saveCharacterBtn" class="secondary" style="margin-top:12px;">
         Gem dagens karakter
@@ -548,6 +556,7 @@
     const dayNote          = document.getElementById("dayNote");
     const saveCharacterBtn = document.getElementById("saveCharacterBtn");
     const fileInput        = document.getElementById("fileInput");
+    const noteCounter      = document.getElementById("noteCounter");
 
     function openDB() {
       return new Promise((resolve, reject) => {
@@ -626,6 +635,11 @@
       });
     }
 
+function updateNoteCounter() {
+  const length = dayNote.value.length;
+  noteCounter.textContent = `${length}/300`;
+}
+    
     function clearAllItems() {
       return new Promise((resolve, reject) => {
         const tx = db.transaction(STORE_NAME, "readwrite");
@@ -682,9 +696,11 @@
       selectedEmoji = item?.emoji || "🙂";
       selectedEmojiLabel = item?.emojiLabel || "Almindelig";
       dayNote.value = item?.note || "";
+      
       recordingDate.value = item?.recordingDate || todayISODate();
 
       updateEmojiUI();
+      updateNoteCounter();
     }
 
     async function saveSelectedDayCharacter() {
@@ -1346,6 +1362,7 @@ async function exportImage() {
     saveCharacterBtn.addEventListener("click", saveSelectedDayCharacter);
     fileInput.addEventListener("change", handleFileUpload);
     daySelect.addEventListener("change", loadSelectedDayCharacter);
+    dayNote.addEventListener("input", updateNoteCounter);
 
     exportSelect.addEventListener("change", () => {
       exportBtn.disabled = !exportSelect.value;
@@ -1394,6 +1411,7 @@ async function exportImage() {
       }
 
       updateEmojiUI();
+      updateNoteCounter();
       await loadSelectedDayCharacter();
       await renderDays();
     }
