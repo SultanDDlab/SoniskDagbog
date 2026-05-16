@@ -306,9 +306,6 @@ input[type="date"] {
 
       <label for="fileInput">Alternativ: upload lydfil</label>
       <input id="fileInput" type="file" accept="audio/*" />
-      <p class="info">
-        Brug dette hvis optagelse direkte i Safari/iPhone driller. Filen gemmes stadig kun lokalt i browseren.
-      </p>
     </section>
 
     <section class="card">
@@ -323,6 +320,10 @@ input[type="date"] {
         <button class="emoji-option" data-emoji="🌧️" data-label="Tung" title="Tung">🌧️</button>
         <button class="emoji-option" data-emoji="🌀" data-label="Kaotisk" title="Kaotisk">🌀</button>
       </div>
+
+      <p class="selected-emoji-label" id="selectedEmojiLabelText">
+  Valgt: Almindelig
+</p>
 
       <label for="dayNote">Kort note</label>
       <textarea id="dayNote" placeholder="Hvad gjorde denne lyd til dagens lyd?"></textarea>
