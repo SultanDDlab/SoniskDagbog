@@ -405,6 +405,27 @@
     // this far better than creating new Audio() objects for each track.
     const sharedAudio = new Audio();
     let currentObjectUrl = null;
+    let audioUnlocked = false;
+
+    // Safari iOS requires audio to be .play()/.pause()'d directly inside a user
+    // gesture at least once before it will allow async .play() calls later.
+    // We unlock on the very first tap anywhere in the document.
+    function unlockAudio() {
+      if (audioUnlocked) return;
+      audioUnlocked = true;
+      sharedAudio.src = "";
+      const p = sharedAudio.play();
+      if (p && typeof p.then === "function") {
+        p.then(() => sharedAudio.pause()).catch(() => {});
+      } else {
+        sharedAudio.pause();
+      }
+      document.removeEventListener("touchstart", unlockAudio, true);
+      document.removeEventListener("mousedown", unlockAudio, true);
+    }
+
+    document.addEventListener("touchstart", unlockAudio, true);
+    document.addEventListener("mousedown", unlockAudio, true);
 
     const recordBtn = document.getElementById("recordBtn");
     const stopBtn = document.getElementById("stopBtn");
