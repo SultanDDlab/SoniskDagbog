@@ -527,29 +527,29 @@
       });
     }
 
-    function getRecorderOptions() {
-      if (!window.MediaRecorder) {
-        return {};
-      }
+function getRecorderOptions() {
+  if (!window.MediaRecorder || !MediaRecorder.isTypeSupported) {
+    return {};
+  }
 
-      if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) {
-        return { mimeType: "audio/webm;codecs=opus" };
-      }
+  const types = [
+    "audio/mp4",
+    "audio/mp4;codecs=mp4a.40.2",
+    "audio/aac",
+    "audio/webm;codecs=opus",
+    "audio/webm"
+  ];
 
-      if (MediaRecorder.isTypeSupported("audio/mp4")) {
-        return { mimeType: "audio/mp4" };
-      }
-
-      if (MediaRecorder.isTypeSupported("audio/aac")) {
-        return { mimeType: "audio/aac" };
-      }
-
-      if (MediaRecorder.isTypeSupported("audio/webm")) {
-        return { mimeType: "audio/webm" };
-      }
-
-      return {};
+  for (const type of types) {
+    if (MediaRecorder.isTypeSupported(type)) {
+      statusText.textContent = `Bruger lydformat: ${type}`;
+      return { mimeType: type };
     }
+  }
+
+  statusText.textContent = "Bruger browserens standard lydformat.";
+  return {};
+}
 
     function formatTime(seconds) {
       const m = String(Math.floor(seconds / 60)).padStart(2, "0");
@@ -657,7 +657,7 @@
           }
         };
 
-        mediaRecorder.start();
+        mediaRecorder.start(1000);
 
         recordBtn.disabled = true;
         stopBtn.disabled = false;
