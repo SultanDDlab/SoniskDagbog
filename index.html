@@ -380,7 +380,7 @@
       </button>
 
       <p class="info">
-        Emoji og BPM fungerer som et ekstra tegnlag oven på lydoptagelsen. BPM bruges også til at styre pausen mellem lydene i ugekompositionen.
+        Emoji og BPM fungerer som et ekstra tegnlag oven på lydoptagelsen. BPM beskriver dagens oplevede tempo.
       </p>
     </section>
 
@@ -784,8 +784,8 @@
 
     if (!weekPlaying) break;
 
-    const pauseMs = getPauseFromBpm(Number(item.bpm || 90));
-    await new Promise(resolve => setTimeout(resolve, pauseMs));
+ const pauseMs = 3000;
+await new Promise(resolve => setTimeout(resolve, pauseMs));
   }
 
   weekPlaying = false;
