@@ -86,14 +86,22 @@
       font: inherit;
     }
 
-    select, input[type="date"] {
-      padding: 14px;
-      border-radius: 14px;
-      border: 1px solid var(--border);
-      background: #fffdf9;
-      color: var(--text);
-      margin-bottom: 14px;
-    }
+select, input[type="date"] {
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: #fffdf9;
+  color: var(--text);
+  margin-bottom: 14px;
+}
+
+input[type="date"] {
+  display: block;
+  height: 52px;
+  line-height: normal;
+  appearance: none;
+  -webkit-appearance: none;
+}
 
     textarea {
       border: 1px solid var(--border);
