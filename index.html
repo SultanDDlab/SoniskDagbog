@@ -392,7 +392,7 @@
     <section class="card">
       <h2>Ugekomposition</h2>
       <p class="info">
-        Lydene afspilles i rækkefølge. Høj BPM giver kortere pause mellem lydene, lav BPM giver længere pause.
+        Emoji og BPM fungerer som et ekstra tegnlag oven på lydoptagelsen. BPM beskriver dagens oplevede tempo.
       </p>
       <button id="playWeekBtn" class="primary">Afspil ugekomposition</button>
       <button id="stopWeekBtn" class="secondary" style="margin-top:10px;" disabled>Stop ugekomposition</button>
@@ -555,18 +555,7 @@
         const isActive = button.dataset.emoji === selectedEmoji;
         button.classList.toggle("active", isActive);
       });
-    }
 
-    function getPauseFromBpm(bpm) {
-      const minPause = 300;
-      const maxPause = 2200;
-      const minBpm = 40;
-      const maxBpm = 180;
-
-      const normalized = (bpm - minBpm) / (maxBpm - minBpm);
-      const pause = maxPause - normalized * (maxPause - minPause);
-
-      return Math.round(pause);
     }
 
     async function loadSelectedDayCharacter() {
@@ -753,42 +742,58 @@
       }
     }
 
-    async function playWeekComposition() {
-      const items = await getAllItems();
-      const recordings = items.filter(item => item.blob);
+  async function playWeekComposition() {
+  const items = await getAllItems();
+  const recordings = items.filter(item => item.blob);
 
-      if (recordings.length === 0) {
-        statusText.textContent = "Der er ingen optagelser endnu.";
-        return;
-      }
+  if (recordings.length === 0) {
+    statusText.textContent = "Der er ingen optagelser endnu.";
+    return;
+  }
 
-      weekPlaying = true;
-      playWeekBtn.disabled = true;
-      stopWeekBtn.disabled = false;
+  weekPlaying = true;
+  playWeekBtn.disabled = true;
+  stopWeekBtn.disabled = false;
 
-      for (const item of recordings) {
-        if (!weekPlaying) break;
+  for (const item of recordings) {
+    if (!weekPlaying) break;
 
-        statusText.textContent = `Afspiller dag ${item.day}: ${item.emoji || "🙂"} ${item.bpm || 90} BPM`;
+    statusText.textContent = `Afspiller dag ${item.day}: ${item.emoji || "🙂"} ${item.bpm || 90} BPM`;
 
-        await new Promise(resolve => {
-          currentAudio = new Audio(URL.createObjectURL(item.blob));
-          currentAudio.onended = resolve;
-          currentAudio.onerror = resolve;
-          currentAudio.play();
-        });
+    const objectUrl = URL.createObjectURL(item.blob);
 
-        const pauseMs = getPauseFromBpm(Number(item.bpm || 90));
+    await new Promise(resolve => {
+      currentAudio = new Audio();
+      currentAudio.src = objectUrl;
+      currentAudio.preload = "auto";
 
-        await new Promise(resolve => setTimeout(resolve, pauseMs));
-      }
+      const finish = () => {
+        URL.revokeObjectURL(objectUrl);
+        resolve();
+      };
 
-      weekPlaying = false;
-      currentAudio = null;
-      playWeekBtn.disabled = false;
-      stopWeekBtn.disabled = true;
-      statusText.textContent = "Ugekompositionen er færdig.";
-    }
+      currentAudio.onended = finish;
+      currentAudio.onerror = finish;
+
+      currentAudio.play().catch(error => {
+        console.error(`Kunne ikke afspille dag ${item.day}:`, error);
+        statusText.textContent = `Kunne ikke afspille dag ${item.day}. Springer videre.`;
+        finish();
+      });
+    });
+
+    if (!weekPlaying) break;
+
+    const pauseMs = getPauseFromBpm(Number(item.bpm || 90));
+    await new Promise(resolve => setTimeout(resolve, pauseMs));
+  }
+
+  weekPlaying = false;
+  currentAudio = null;
+  playWeekBtn.disabled = false;
+  stopWeekBtn.disabled = true;
+  statusText.textContent = "Ugekompositionen er færdig.";
+}
 
     function stopWeekComposition() {
       weekPlaying = false;
