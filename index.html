@@ -328,7 +328,7 @@
       </div>
 
       <p class="selected-emoji-label" id="selectedEmojiLabelText">
-        Valgt: Almindelig
+        Almindelig
       </p>
 
       <label for="dayNote">Kort note</label>
@@ -561,7 +561,7 @@
         btn.classList.toggle("active", btn.dataset.emoji === selectedEmoji);
       });
 
-      selectedEmojiLabelText.textContent = `Valgt: ${selectedEmojiLabel}`;
+      selectedEmojiLabelText.textContent = selectedEmojiLabel;
     }
 
     async function loadSelectedDayCharacter() {
