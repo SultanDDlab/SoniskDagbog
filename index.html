@@ -778,7 +778,7 @@ function updateNoteCounter() {
         const rms = Math.sqrt(sum / dataArray.length);
         const digitalDb = rms > 0 ? 20 * Math.log10(rms) : -60;
         const clampedDigitalDb = Math.max(-60, Math.min(0, digitalDb));
-        const displayedDb = Math.round(clampedDigitalDb + 100);
+        const displayedDb = Math.round(clampedDigitalDb + 75);
         const levelPercent = Math.max(0, Math.min(100, displayedDb));
 
         if (levelFill) {
