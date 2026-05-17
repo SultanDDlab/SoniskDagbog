@@ -428,7 +428,7 @@
       <div class="input-level" aria-live="polite">
         <div class="input-level-top">
           <span id="levelLabel">Inputniveau</span>
-          <span id="levelDb">-∞ dBFS</span>
+          <span id="levelDb">0 dB</span>
         </div>
         <div class="level-meter" aria-hidden="true">
           <div class="level-fill" id="levelFill"></div>
@@ -734,13 +734,13 @@ function updateNoteCounter() {
         levelFill.style.background = "var(--meter-green)";
       }
 
-      if (levelDb) levelDb.textContent = "-∞ dBFS";
+      if (levelDb) levelDb.textContent = "0 dB";
       if (levelLabel) levelLabel.textContent = "Inputniveau";
     }
 
     function meterColorForDb(db) {
-      if (db > -12) return "var(--meter-red)";
-      if (db > -24) return "var(--meter-yellow)";
+      if (db >= 80) return "var(--meter-red)";
+      if (db >= 60) return "var(--meter-yellow)";
       return "var(--meter-green)";
     }
 
@@ -776,22 +776,23 @@ function updateNoteCounter() {
         }
 
         const rms = Math.sqrt(sum / dataArray.length);
-        const db = rms > 0 ? 20 * Math.log10(rms) : -60;
-        const clampedDb = Math.max(-60, Math.min(0, db));
-        const levelPercent = ((clampedDb + 60) / 60) * 100;
+        const digitalDb = rms > 0 ? 20 * Math.log10(rms) : -60;
+        const clampedDigitalDb = Math.max(-60, Math.min(0, digitalDb));
+        const displayedDb = Math.round(clampedDigitalDb + 100);
+        const levelPercent = Math.max(0, Math.min(100, displayedDb));
 
         if (levelFill) {
           levelFill.style.width = `${levelPercent}%`;
-          levelFill.style.background = meterColorForDb(clampedDb);
+          levelFill.style.background = meterColorForDb(displayedDb);
         }
 
         if (levelDb) {
-          levelDb.textContent = rms > 0.0005 ? `${Math.round(clampedDb)} dBFS` : "-∞ dBFS";
+          levelDb.textContent = rms > 0.0005 ? `${displayedDb} dB` : "0 dB";
         }
 
         if (levelLabel) {
-          if (clampedDb > -12) levelLabel.textContent = "Inputniveau: højt";
-          else if (clampedDb > -24) levelLabel.textContent = "Inputniveau: middel";
+          if (displayedDb >= 80) levelLabel.textContent = "Inputniveau: højt";
+          else if (displayedDb >= 60) levelLabel.textContent = "Inputniveau: middel";
           else levelLabel.textContent = "Inputniveau: lavt";
         }
 
